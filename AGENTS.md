@@ -126,3 +126,4 @@ const table = sqliteTable("session", {
 
 - 目标目录：docs\agent-gen。
 - 永远不要在文档中写代码。
+- 永远不要在文档中生成例子，除非我又有要求。

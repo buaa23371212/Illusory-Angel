@@ -1,0 +1,921 @@
+openapi: 3.0.3
+info:
+  title: 养成计划器 API
+  description: 养成计划器核心API - 支持各类养成/计划类任务的项目、目标、约束管理
+  version: 1.0.0
+servers:
+  - url: /api/v1
+tags:
+  - name: projects
+    description: 项目管理
+  - name: goals
+    description: 目标管理
+  - name: constraints
+    description: 约束管理
+
+paths:
+  # ========== 项目接口 ==========
+  /projects:
+    get:
+      tags:
+        - projects
+      summary: 获取项目列表
+      description: 获取所有项目，支持分页和按名称搜索
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: 每页数量
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: 搜索关键词（按名称模糊搜索）
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: 按分类筛选
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+    post:
+      tags:
+        - projects
+      summary: 创建项目
+      description: 创建新项目
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        200:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+
+  /projects/{projectId}:
+    get:
+      tags:
+        - projects
+      summary: 获取项目详情
+      description: 获取单个项目的详细信息
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        404:
+          description: 项目不存在
+    put:
+      tags:
+        - projects
+      summary: 更新项目信息
+      description: 更新项目的名称、描述等信息
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        404:
+          description: 项目不存在
+    delete:
+      tags:
+        - projects
+      summary: 删除项目
+      description: 删除项目（软删除），级联删除下属所有目标和约束
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      responses:
+        200:
+          description: 删除成功
+        404:
+          description: 项目不存在
+
+  /projects/{projectId}/constraints:
+    get:
+      tags:
+        - projects
+      summary: 获取项目所有约束
+      description: 获取附加在该项目上的所有约束
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintListResponse'
+
+  # ========== 目标接口 ==========
+  /goals:
+    get:
+      tags:
+        - goals
+      summary: 获取目标列表
+      description: 获取目标列表，可按项目筛选，按优先级排序
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+          description: 按项目ID筛选
+        - name: parent_goal_id
+          in: query
+          schema:
+            type: integer
+          description: 按父目标筛选（NULL表示顶层目标）
+        - name: is_completed
+          in: query
+          schema:
+            type: boolean
+          description: 按完成状态筛选
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: 每页数量
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalListResponse'
+    post:
+      tags:
+        - goals
+      summary: 创建目标
+      description: 创建新目标，必须关联项目
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest'
+      responses:
+        200:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponse'
+
+  /goals/{goalId}:
+    get:
+      tags:
+        - goals
+      summary: 获取目标详情
+      description: 获取单个目标的详细信息，包含所有约束
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalDetailResponse'
+        404:
+          description: 目标不存在
+    put:
+      tags:
+        - goals
+      summary: 更新目标信息
+      description: 更新目标的名称、描述等信息
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalRequest'
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponse'
+        404:
+          description: 目标不存在
+    delete:
+      tags:
+        - goals
+      summary: 删除目标
+      description: 删除目标（软删除），级联删除下属所有约束
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      responses:
+        200:
+          description: 删除成功
+        404:
+          description: 目标不存在
+
+  /goals/{goalId}/toggle-complete:
+    post:
+      tags:
+        - goals
+      summary: 切换目标完成状态
+      description: 标记目标为完成或未完成
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_completed:
+                  type: boolean
+                  description: 是否完成
+              required:
+                - is_completed
+      responses:
+        200:
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponse'
+        404:
+          description: 目标不存在
+
+  /goals/batch-move:
+    post:
+      tags:
+        - goals
+      summary: 批量移动目标
+      description: 将多个目标批量移动到另一个项目
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchMoveGoalsRequest'
+      responses:
+        200:
+          description: 移动成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  moved_count:
+                    type: integer
+                    description: 成功移动数量
+
+  /goals/tree:
+    get:
+      tags:
+        - goals
+      summary: 获取目标树形结构
+      description: 获取指定项目下的目标树形结构
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalTreeResponse'
+
+  # ========== 约束接口 ==========
+  /constraints:
+    post:
+      tags:
+        - constraints
+      summary: 添加约束
+      description: 添加约束到所有者（项目或目标）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConstraintRequest'
+      responses:
+        200:
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintResponse'
+
+  /constraints/{constraintId}:
+    put:
+      tags:
+        - constraints
+      summary: 更新约束参数
+      description: 更新约束的参数信息
+      parameters:
+        - name: constraintId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 约束ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConstraintRequest'
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintResponse'
+        404:
+          description: 约束不存在
+    delete:
+      tags:
+        - constraints
+      summary: 删除约束
+      description: 删除约束
+      parameters:
+        - name: constraintId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 约束ID
+      responses:
+        200:
+          description: 删除成功
+        404:
+          description: 约束不存在
+
+  /constraints/{ownerType}/{ownerId}:
+    get:
+      tags:
+        - constraints
+      summary: 获取所有者的所有约束
+      description: 获取附加在指定所有者（项目或目标）上的所有约束
+      parameters:
+        - name: ownerType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [project, goal]
+          description: 所有者类型
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 所有者ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintListResponse'
+
+  /constraints/{ownerType}/{ownerId}/check:
+    get:
+      tags:
+        - constraints
+      summary: 检查约束是否满足
+      description: 检查该所有者的所有约束是否满足
+      parameters:
+        - name: ownerType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [project, goal]
+          description: 所有者类型
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 所有者ID
+      responses:
+        200:
+          description: 检查完成
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintCheckResponse'
+
+components:
+  schemas:
+    # ========== 项目 ==========
+    Project:
+      type: object
+      properties:
+        project_id:
+          type: integer
+          description: 项目ID
+        name:
+          type: string
+          description: 项目名称
+        description:
+          type: string
+          nullable: true
+          description: 项目描述
+        category:
+          type: string
+          nullable: true
+          description: 项目分类
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新时间
+        is_deleted:
+          type: integer
+          enum: [0, 1]
+          description: 软删除标记
+      required:
+        - project_id
+        - name
+        - created_at
+        - updated_at
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 项目名称
+        description:
+          type: string
+          nullable: true
+          description: 项目描述
+        category:
+          type: string
+          nullable: true
+          description: 项目分类
+      required:
+        - name
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 项目名称
+        description:
+          type: string
+          nullable: true
+          description: 项目描述
+        category:
+          type: string
+          nullable: true
+          description: 项目分类
+
+    ProjectResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        data:
+          $ref: '#/components/schemas/Project'
+
+    ProjectListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                $ref: '#/components/schemas/Project'
+            total:
+              type: integer
+            page:
+              type: integer
+            total_pages:
+              type: integer
+
+    # ========== 目标 ==========
+    Goal:
+      type: object
+      properties:
+        goal_id:
+          type: integer
+          description: 目标ID
+        project_id:
+          type: integer
+          description: 所属项目ID
+        parent_goal_id:
+          type: integer
+          nullable: true
+          description: 父目标ID，NULL表示顶层目标
+        name:
+          type: string
+          description: 目标名称
+        description:
+          type: string
+          nullable: true
+          description: 目标描述
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 优先级 1-最高 5-最低
+        estimated_days:
+          type: integer
+          nullable: true
+          description: 预计完成天数
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 实际完成时间
+        is_completed:
+          type: integer
+          enum: [0, 1]
+          description: 是否完成
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新时间
+        is_deleted:
+          type: integer
+          enum: [0, 1]
+          description: 软删除标记
+      required:
+        - goal_id
+        - project_id
+        - name
+        - priority
+        - created_at
+        - updated_at
+
+    CreateGoalRequest:
+      type: object
+      properties:
+        project_id:
+          type: integer
+          description: 所属项目ID
+        parent_goal_id:
+          type: integer
+          nullable: true
+          description: 父目标ID
+        name:
+          type: string
+          description: 目标名称
+        description:
+          type: string
+          nullable: true
+          description: 目标描述
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 3
+          description: 优先级 1-5
+      required:
+        - project_id
+        - name
+
+    UpdateGoalRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 目标名称
+        description:
+          type: string
+          nullable: true
+          description: 目标描述
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 优先级 1-5
+        parent_goal_id:
+          type: integer
+          nullable: true
+          description: 父目标ID
+
+    GoalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Goal'
+
+    GoalDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            goal:
+              $ref: '#/components/schemas/Goal'
+            constraints:
+              type: array
+              items:
+                $ref: '#/components/schemas/Constraint'
+
+    GoalListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                $ref: '#/components/schemas/Goal'
+            total:
+              type: integer
+            page:
+              type: integer
+            total_pages:
+              type: integer
+
+    BatchMoveGoalsRequest:
+      type: object
+      properties:
+        goal_ids:
+          type: array
+          items:
+            type: integer
+          description: 要移动的目标ID列表
+        target_project_id:
+          type: integer
+          description: 目标项目ID
+      required:
+        - goal_ids
+        - target_project_id
+
+    GoalTreeNode:
+      type: object
+      properties:
+        goal_id:
+          type: integer
+        project_id:
+          type: integer
+        parent_goal_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        priority:
+          type: integer
+        is_completed:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoalTreeNode'
+
+    GoalTreeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoalTreeNode'
+
+    # ========== 约束 ==========
+    Constraint:
+      type: object
+      properties:
+        constraint_id:
+          type: integer
+          description: 约束ID
+        owner_type:
+          type: string
+          enum: [project, goal]
+          description: 所有者类型
+        owner_id:
+          type: integer
+          description: 所有者ID
+        constraint_name:
+          type: string
+          nullable: true
+          description: 约束名称
+        params:
+          type: object
+          description: 约束参数（JSON格式，类型不同结构不同）
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新时间
+        is_deleted:
+          type: integer
+          enum: [0, 1]
+          description: 软删除标记
+      required:
+        - constraint_id
+        - owner_type
+        - owner_id
+        - params
+        - created_at
+        - updated_at
+
+    CreateConstraintRequest:
+      type: object
+      properties:
+        owner_type:
+          type: string
+          enum: [project, goal]
+          description: 所有者类型
+        owner_id:
+          type: integer
+          description: 所有者ID
+        constraint_name:
+          type: string
+          nullable: true
+          description: 约束名称
+        params:
+          type: object
+          description: 约束参数
+      required:
+        - owner_type
+        - owner_id
+        - params
+
+    UpdateConstraintRequest:
+      type: object
+      properties:
+        constraint_name:
+          type: string
+          nullable: true
+          description: 约束名称
+        params:
+          type: object
+          description: 约束参数
+
+    ConstraintResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Constraint'
+
+    ConstraintListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Constraint'
+
+    ConstraintCheckResult:
+      type: object
+      properties:
+        constraint_id:
+          type: integer
+        constraint_name:
+          type: string
+          nullable: true
+        satisfied:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+          description: 不满足时的说明
+
+    ConstraintCheckResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            all_satisfied:
+              type: boolean
+              description: 所有约束是否都满足
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConstraintCheckResult'
+
+    # ========== 通用响应 ==========
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+          description: 错误信息

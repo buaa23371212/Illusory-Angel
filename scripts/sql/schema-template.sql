@@ -90,33 +90,6 @@ CREATE TABLE IF NOT EXISTS constraints (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='约束表';
 
 -- ============================================
--- 表4: tags - 标签表
--- 描述: 标签用于分类和筛选目标，可替代固定枚举类型实现灵活分类，支持各类业务场景
--- ============================================
-CREATE TABLE IF NOT EXISTS tags (
-    tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '标签ID',
-    name VARCHAR(50) NOT NULL UNIQUE COMMENT '标签名称',
-    color VARCHAR(20) DEFAULT '#808080' COMMENT '标签颜色（用于UI显示）',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
-
--- ============================================
--- 表5: goal_tags - 目标标签关联表（多对多）
--- 描述: 一个目标可以有多个标签，一个标签可以关联多个目标
--- ============================================
-CREATE TABLE IF NOT EXISTS goal_tags (
-    goal_id INT UNSIGNED NOT NULL COMMENT '目标ID',
-    tag_id INT UNSIGNED NOT NULL COMMENT '标签ID',
-    PRIMARY KEY (goal_id, tag_id),
-    
-    FOREIGN KEY (goal_id) REFERENCES goals(goal_id) 
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(tag_id) 
-        ON DELETE CASCADE ON UPDATE CASCADE
-    
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='目标标签关联表';
-
--- ============================================
 -- 完成提示
 -- ============================================
 SELECT '数据库 schema 初始化完成！' AS message;
