@@ -347,27 +347,6 @@ paths:
                     type: integer
                     description: 成功移动数量
 
-  /goals/tree:
-    get:
-      tags:
-        - goals
-      summary: 获取目标树形结构
-      description: 获取指定项目下的目标树形结构
-      parameters:
-        - name: project_id
-          in: query
-          required: true
-          schema:
-            type: integer
-          description: 项目ID
-      responses:
-        200:
-          description: 获取成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GoalTreeResponse'
-
   # ========== 约束接口 ==========
   /constraints:
     post:
@@ -751,40 +730,6 @@ components:
       required:
         - goal_ids
         - target_project_id
-
-    GoalTreeNode:
-      type: object
-      properties:
-        goal_id:
-          type: integer
-        project_id:
-          type: integer
-        parent_goal_id:
-          type: integer
-          nullable: true
-        name:
-          type: string
-        description:
-          type: string
-          nullable: true
-        priority:
-          type: integer
-        is_completed:
-          type: integer
-        children:
-          type: array
-          items:
-            $ref: '#/components/schemas/GoalTreeNode'
-
-    GoalTreeResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/GoalTreeNode'
 
     # ========== 约束 ==========
     Constraint:

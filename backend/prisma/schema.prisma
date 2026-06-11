@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// 项目表 - 一个项目对应一个养成/计划任务
+/// 可以是游戏养成，也可以是学习、健身、投资等各类计划
+model Project {
+  /// 项目ID
+  projectId   Int       @id @default(autoincrement()) @db.UnsignedInt
+  /// 项目名称
+  name        String    @db.VarChar(255)
+  /// 项目描述
+  description String?   @db.Text
+  /// 项目分类（如：游戏养成、学习计划、健身目标等）
+  category    String?   @db.VarChar(100)
+  /// 创建时间
+  createdAt   DateTime  @default(now()) @db.DateTime(0)
+  /// 更新时间
+  updatedAt   DateTime  @updatedAt @db.DateTime(0)
+  /// 软删除标记: 0-未删除, 1-已删除
+  isDeleted   Boolean   @default(false) @db.TinyInt(1)
+
+  /// 关联该项目下的所有目标
+  goals       Goal[]
+
+  @@map("projects")
+}
+
+/// 目标表 - 一个项目包含多个目标
+/// 不包含业务特定字段，各类个性化信息通过约束系统扩展实现
+/// 嵌套依赖关系通过约束系统实现，不在本表存储
+model Goal {
+  /// 目标ID
+  goalId        Int        @id @default(autoincrement()) @db.UnsignedInt
+  /// 所属项目ID
+  projectId     Int        @db.UnsignedInt
+  /// 目标名称
+  name          String     @db.VarChar(255)
+  /// 目标描述
+  description   String?    @db.Text
+  /// 优先级: 1-最高, 2-高, 3-中, 4-低, 5-最低
+  priority      Int        @default(3) @db.UnsignedTinyInt
+  /// 预计完成天数（由系统自动计算）
+  estimatedDays Int?       @db.UnsignedInt
+  /// 实际完成时间
+  completedAt   DateTime?  @db.DateTime(0)
+  /// 创建时间
+  createdAt     DateTime   @default(now()) @db.DateTime(0)
+  /// 更新时间
+  updatedAt     DateTime   @updatedAt @db.DateTime(0)
+  /// 是否完成: 0-未完成, 1-已完成
+  isCompleted   Boolean    @default(false) @db.TinyInt(1)
+  /// 软删除标记: 0-未删除, 1-已删除
+  isDeleted     Boolean    @default(false) @db.TinyInt(1)
+
+  /// 关联所属项目
+  project       Project    @relation(fields: [projectId], references: [projectId], onDelete: Cascade, onUpdate: Cascade)
+  /// 关联该目标下的所有约束
+  constraints   Constraint[]
+
+  /// 索引优化查询
+  @@index([projectId])
+  @@index([priority])
+  @@index([isCompleted])
+
+  @@map("goals")
+}
+
+/// 约束表 - 约束可以附加在项目或目标上，通过JSON存储灵活扩展不同类型
+/// 所有者类型: 'project' 表示项目（全局约束），'goal' 表示目标（目标约束）
+/// 不同约束类型通过params JSON存储：
+/// - dependency: { target_goal_id: 123, required_quantity: 1 } - 依赖目标
+/// - property: { attribute: "required_quantity", operator: ">=", value: 100 } - 属性比较约束
+/// - comparison: { goal_a_id: 1, attribute_a: "level", operator: ">", goal_b_id: 2, attribute_b: "level" } - 目标间比较约束
+/// - drop_limit: { resource_goal_id: 123, daily: 120, weekly: 0 } - 每日/每周获取限制
+/// - quantity: { min: 1, max: 5 } - 数量范围约束
+/// - current: { attribute: "current_quantity", value: 0 } - 当前进度记录
+model Constraint {
+  /// 约束ID
+  constraintId   Int       @id @default(autoincrement()) @db.UnsignedInt
+  /// 所有者类型: project-项目, goal-目标
+  ownerType       OwnerType @db.Enum
+  /// 所有者ID（项目ID或目标ID）
+  ownerId         Int       @db.UnsignedInt
+  /// 约束名称（可选）
+  constraintName  String?   @db.VarChar(100)
+  /// 约束参数(JSON格式)，不同类型参数结构不同
+  params          Json      // 不同类型参数结构不同，详见上方注释
+  /// 创建时间
+  createdAt       DateTime  @default(now()) @db.DateTime(0)
+  /// 更新时间
+  updatedAt       DateTime  @updatedAt @db.DateTime(0)
+  /// 软删除标记: 0-未删除, 1-已删除
+  isDeleted       Boolean   @default(false) @db.TinyInt(1)
+
+  /// 索引优化查询
+  @@index([ownerType, ownerId])
+
+  @@map("constraints")
+}
+
+/// 所有者类型枚举
+enum OwnerType {
+  PROJECT
+  GOAL
+}

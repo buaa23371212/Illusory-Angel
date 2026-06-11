@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS projects (
 CREATE TABLE IF NOT EXISTS goals (
     goal_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '目标ID',
     project_id INT UNSIGNED NOT NULL COMMENT '所属项目ID',
-    parent_goal_id INT UNSIGNED DEFAULT NULL COMMENT '父目标ID（用于嵌套），NULL表示顶层目标',
     name VARCHAR(255) NOT NULL COMMENT '目标名称',
     description TEXT DEFAULT NULL COMMENT '目标描述',
     priority TINYINT UNSIGNED NOT NULL DEFAULT 3 COMMENT '优先级: 1-最高, 2-高, 3-中, 4-低, 5-最低',
@@ -47,15 +46,12 @@ CREATE TABLE IF NOT EXISTS goals (
     
     -- 外键约束
     FOREIGN KEY (project_id) REFERENCES projects(project_id) 
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (parent_goal_id) REFERENCES goals(goal_id) 
-        ON DELETE SET NULL ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE
     
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='目标表';
 
 -- 索引优化查询
 CREATE INDEX idx_project_id ON goals(project_id);
-CREATE INDEX idx_parent_goal_id ON goals(parent_goal_id);
 CREATE INDEX idx_priority ON goals(priority);
 CREATE INDEX idx_is_completed ON goals(is_completed);
 
