@@ -6,7 +6,6 @@
 import { Router } from 'express';
 import {
   getConstraintsByOwner,
-  checkConstraints,
   addConstraint,
   updateConstraint,
   deleteConstraint
@@ -17,7 +16,6 @@ const router = Router();
 // 所有者级操作
 router.get('/:ownerType/:ownerId/constraints', getConstraintsByOwner);
 router.post('/:ownerType/:ownerId/constraints', addConstraint);
-router.get('/:ownerType/:ownerId/constraints/check', checkConstraints);
 
 // 单个约束操作
 router.put('/constraints/:id', updateConstraint);

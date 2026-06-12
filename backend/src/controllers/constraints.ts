@@ -25,22 +25,6 @@ async function checkOwnerExists(ownerType: OwnerType, ownerId: number): Promise<
 }
 
 /**
- * 检查约束是否满足（预留接口，暂不实现）
- * @param ownerType 所有者类型
- * @param ownerId 所有者ID
- */
-async function checkConstraintSatisfied(ownerType: OwnerType, ownerId: number): Promise<{
-  satisfied: boolean;
-  unsatisfied: number[];
-}> {
-  // 暂不实现约束检查，默认所有约束都满足
-  return {
-    satisfied: true,
-    unsatisfied: []
-  };
-}
-
-/**
  * 根据所有者获取所有约束
  * @param req Express请求对象，params.ownerType和params.ownerId
  * @param res Express响应对象
@@ -61,31 +45,6 @@ export async function getConstraintsByOwner(req: Request, res: Response) {
     );
 
     success(res, constraints);
-  } catch (err) {
-    serverError(res, String(err));
-  }
-}
-
-/**
- * 检查当前所有者的约束是否都满足
- * @param req Express请求对象，params.ownerType和params.ownerId
- * @param res Express响应对象
- */
-export async function checkConstraints(req: Request, res: Response) {
-  try {
-    const { ownerType, ownerId } = req.params;
-
-    if (!ownerType || !['PROJECT', 'GOAL'].includes(ownerType)) {
-      error(res, 'Valid ownerType (PROJECT/GOAL) is required', 400);
-      return;
-    }
-
-    const result = await checkConstraintSatisfied(
-      ownerType as OwnerType,
-      parseInt(ownerId)
-    );
-
-    success(res, result);
   } catch (err) {
     serverError(res, String(err));
   }

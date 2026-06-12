@@ -442,34 +442,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ConstraintListResponse'
 
-  /constraints/{ownerType}/{ownerId}/check:
-    get:
-      tags:
-        - constraints
-      summary: 检查约束是否满足
-      description: 检查该所有者的所有约束是否满足
-      parameters:
-        - name: ownerType
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [project, goal]
-          description: 所有者类型
-        - name: ownerId
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: 所有者ID
-      responses:
-        200:
-          description: 检查完成
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConstraintCheckResponse'
-
 components:
   schemas:
     # ========== 项目 ==========
