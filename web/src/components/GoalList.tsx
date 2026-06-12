@@ -1,0 +1,276 @@
+import { useState, useEffect } from 'react'
+import { apiClient } from '../api/client'
+import type { Project, Goal } from '../api/client'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { Checkbox } from './ui/checkbox'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
+import { Trash2, Plus, CheckCircle2, Target } from 'lucide-react'
+import { toast } from 'sonner'
+
+/**
+ * 目标列表组件属性
+ */
+interface GoalListProps {
+  selectedProject: Project | null
+  onGoalChange: () => void
+}
+
+/**
+ * 目标列表组件
+ * 在内容区展示选中项目的所有目标，支持增删改查操作
+ */
+export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [newGoalTitle, setNewGoalTitle] = useState('')
+  const [newGoalDescription, setNewGoalDescription] = useState('')
+
+  /**
+   * 加载目标列表
+   */
+  const loadGoals = async () => {
+    if (!selectedProject) return
+
+    try {
+      setIsLoading(true)
+      const data = await apiClient.getGoals({ project_id: selectedProject.project_id })
+      setGoals(data?.list || [])
+    } catch (error) {
+      console.error('加载目标失败:', error)
+      toast.error('加载目标失败')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /**
+   * 添加新目标
+   */
+  const handleAddGoal = async () => {
+    if (!selectedProject) return
+    if (!newGoalTitle.trim()) {
+      toast.error('请输入目标名称')
+      return
+    }
+
+    try {
+      const newGoal = await apiClient.createGoal({
+        project_id: selectedProject.project_id,
+        name: newGoalTitle.trim(),
+        description: newGoalDescription.trim() || null,
+        priority: 3,
+      })
+      setGoals([...goals, newGoal])
+      setNewGoalTitle('')
+      setNewGoalDescription('')
+      setAddDialogOpen(false)
+      toast.success('目标添加成功')
+      onGoalChange()
+    } catch (error) {
+      console.error('添加目标失败:', error)
+      toast.error('添加目标失败')
+    }
+  }
+
+  /**
+   * 切换目标完成状态
+   */
+  const handleToggleGoal = async (goal: Goal) => {
+    try {
+      const toggledGoal = await apiClient.toggleGoalComplete(goal.goal_id, (goal.is_completed !== 1))
+      setGoals(goals.map(g => g.goal_id === goal.goal_id ? toggledGoal : g))
+      onGoalChange()
+    } catch (error) {
+      console.error('更新目标失败:', error)
+      toast.error('更新目标失败')
+    }
+  }
+
+  /**
+   * 删除目标
+   */
+  const handleDeleteGoal = async (goalId: number) => {
+    try {
+      await apiClient.deleteGoal(goalId)
+      setGoals(goals.filter(g => g.goal_id !== goalId))
+      toast.success('目标删除成功')
+      onGoalChange()
+    } catch (error) {
+      console.error('删除目标失败:', error)
+      toast.error('删除目标失败')
+    }
+  }
+
+  // 当选中项目变化时重新加载目标
+  useEffect(() => {
+    loadGoals()
+  }, [selectedProject?.project_id])
+
+  // 统计信息
+  const completedCount = goals.filter(g => g.is_completed === 1).length
+  const totalCount = goals.length
+  const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+  if (!selectedProject) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="text-center py-12 max-w-md w-full">
+          <CardContent>
+            <Target className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">请选择一个项目</h3>
+            <p className="text-muted-foreground">从左侧导航栏选择一个项目查看目标</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 项目信息和进度 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{selectedProject.name}</h2>
+          {selectedProject.description && (
+            <p className="text-muted-foreground mt-1">{selectedProject.description}</p>
+          )}
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          添加目标
+        </Button>
+      </div>
+
+      {/* 进度卡片 */}
+      {totalCount > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">完成进度</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between text-sm mb-2">
+              <span>{completedCount}/{totalCount} 已完成</span>
+              <span className="font-medium">{progressPercentage}%</span>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 目标列表 */}
+      <div className="space-y-3">
+        {isLoading ? (
+          // 加载骨架屏
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-full bg-muted h-5 w-5 animate-pulse" />
+                    <div className="flex-1 h-4 bg-muted rounded animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : goals.length === 0 ? (
+          // 空状态
+          <Card className="text-center py-12">
+            <CardContent>
+              <Target className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">还没有目标</h3>
+              <p className="text-muted-foreground mb-6">点击右上角"添加目标"开始你的养成计划</p>
+              <Button onClick={() => setAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                添加第一个目标
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          // 目标列表 - 按顺序从上到下展示
+          <div className="space-y-3">
+            {goals.map((goal) => (
+              <Card key={goal.goal_id} className="transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={goal.is_completed === 1}
+                      onCheckedChange={() => handleToggleGoal(goal)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-base break-words ${
+                          goal.is_completed === 1 ? 'line-through text-muted-foreground' : 'font-medium'
+                        }`}
+                      >
+                        {goal.name}
+                      </p>
+                      {goal.description && (
+                        <p className="text-sm text-muted-foreground break-words mt-1">
+                          {goal.description}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteGoal(goal.goal_id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 添加目标对话框 */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加新目标</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="goal-title">目标名称</Label>
+              <Input
+                id="goal-title"
+                placeholder="输入目标名称"
+                value={newGoalTitle}
+                onChange={(e) => setNewGoalTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="goal-description">目标描述（可选）</Label>
+              <Input
+                id="goal-description"
+                placeholder="输入目标描述"
+                value={newGoalDescription}
+                onChange={(e) => setNewGoalDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleAddGoal}>添加</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
