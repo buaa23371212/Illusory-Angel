@@ -578,10 +578,6 @@ components:
         project_id:
           type: integer
           description: 所属项目ID
-        parent_goal_id:
-          type: integer
-          nullable: true
-          description: 父目标ID，NULL表示顶层目标
         name:
           type: string
           description: 目标名称
@@ -594,15 +590,6 @@ components:
           minimum: 1
           maximum: 5
           description: 优先级 1-最高 5-最低
-        estimated_days:
-          type: integer
-          nullable: true
-          description: 预计完成天数
-        completed_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: 实际完成时间
         is_completed:
           type: integer
           enum: [0, 1]
@@ -633,10 +620,6 @@ components:
         project_id:
           type: integer
           description: 所属项目ID
-        parent_goal_id:
-          type: integer
-          nullable: true
-          description: 父目标ID
         name:
           type: string
           description: 目标名称
@@ -669,10 +652,6 @@ components:
           minimum: 1
           maximum: 5
           description: 优先级 1-5
-        parent_goal_id:
-          type: integer
-          nullable: true
-          description: 父目标ID
 
     GoalResponse:
       type: object

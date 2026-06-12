@@ -26,7 +26,7 @@ model Project {
   /// 更新时间
   updatedAt   DateTime  @updatedAt @db.DateTime(0)
   /// 软删除标记: 0-未删除, 1-已删除
-  isDeleted   Boolean   @default(false) @db.TinyInt(1)
+  isDeleted   Boolean   @default(false) @db.TinyInt
 
   /// 关联该项目下的所有目标
   goals       Goal[]
@@ -48,23 +48,17 @@ model Goal {
   description   String?    @db.Text
   /// 优先级: 1-最高, 2-高, 3-中, 4-低, 5-最低
   priority      Int        @default(3) @db.UnsignedTinyInt
-  /// 预计完成天数（由系统自动计算）
-  estimatedDays Int?       @db.UnsignedInt
-  /// 实际完成时间
-  completedAt   DateTime?  @db.DateTime(0)
   /// 创建时间
   createdAt     DateTime   @default(now()) @db.DateTime(0)
   /// 更新时间
   updatedAt     DateTime   @updatedAt @db.DateTime(0)
   /// 是否完成: 0-未完成, 1-已完成
-  isCompleted   Boolean    @default(false) @db.TinyInt(1)
+  isCompleted   Boolean    @default(false) @db.TinyInt
   /// 软删除标记: 0-未删除, 1-已删除
-  isDeleted     Boolean    @default(false) @db.TinyInt(1)
+  isDeleted     Boolean    @default(false) @db.TinyInt
 
   /// 关联所属项目
   project       Project    @relation(fields: [projectId], references: [projectId], onDelete: Cascade, onUpdate: Cascade)
-  /// 关联该目标下的所有约束
-  constraints   Constraint[]
 
   /// 索引优化查询
   @@index([projectId])
@@ -87,7 +81,7 @@ model Constraint {
   /// 约束ID
   constraintId   Int       @id @default(autoincrement()) @db.UnsignedInt
   /// 所有者类型: project-项目, goal-目标
-  ownerType       OwnerType @db.Enum
+  ownerType       OwnerType
   /// 所有者ID（项目ID或目标ID）
   ownerId         Int       @db.UnsignedInt
   /// 约束名称（可选）
@@ -99,7 +93,10 @@ model Constraint {
   /// 更新时间
   updatedAt       DateTime  @updatedAt @db.DateTime(0)
   /// 软删除标记: 0-未删除, 1-已删除
-  isDeleted       Boolean   @default(false) @db.TinyInt(1)
+  isDeleted       Boolean   @default(false) @db.TinyInt
+
+  /// 反向关系（通过ownerType和ownerId动态关联）
+  /// 实际关系由业务逻辑处理，这里只保留类型定义
 
   /// 索引优化查询
   @@index([ownerType, ownerId])
