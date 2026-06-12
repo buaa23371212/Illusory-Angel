@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(0.9791 0.0017 247.8390);
+  --color-foreground: oklch(0.1221 0.0109 204.5264);
+  --color-card: oklch(1.0000 0 0);
+  --color-card-foreground: oklch(0.1221 0.0109 204.5264);
+  --color-popover: oklch(1.0000 0 0);
+  --color-popover-foreground: oklch(0.1221 0.0109 204.5264);
+  --color-primary: oklch(0.1887 0.0204 201.0394);
+  --color-primary-foreground: oklch(1.0000 0 0);
+  --color-secondary: oklch(0.9401 0.0024 247.8956);
+  --color-secondary-foreground: oklch(0.1887 0.0204 201.0394);
+  --color-muted: oklch(0.9401 0.0024 247.8956);
+  --color-muted-foreground: oklch(0.5560 0.0135 207.1725);
+  --color-accent: oklch(0.9401 0.0024 247.8956);
+  --color-accent-foreground: oklch(0.1887 0.0204 201.0394);
+  --color-destructive: oklch(0.6368 0.2078 25.3313);
+  --color-destructive-foreground: oklch(1.0000 0 0);
+  --color-border: oklch(0.8920 0.0035 247.9415);
+  --color-input: oklch(0.8507 0.0051 246.6615);
+  --color-ring: oklch(0.1221 0.0109 204.5264);
+  --radius: 0.5rem;
+}
+
+@theme dark {
+  --color-background: oklch(0.1221 0.0109 204.5264);
+  --color-foreground: oklch(0.9281 0.0126 201.8927);
+  --color-card: oklch(0.1531 0.0115 202.5077);
+  --color-card-foreground: oklch(0.9281 0.0126 201.8927);
+  --color-popover: oklch(0.1531 0.0115 202.5077);
+  --color-popover-foreground: oklch(0.9281 0.0126 201.8927);
+  --color-primary: oklch(0.9281 0.0126 201.8927);
+  --color-primary-foreground: oklch(0.1887 0.0204 201.0394);
+  --color-secondary: oklch(0.2761 0.0056 203.3408);
+  --color-secondary-foreground: oklch(0.9281 0.0126 201.8927);
+  --color-muted: oklch(0.2761 0.0056 203.3408);
+  --color-muted-foreground: oklch(0.7125 0.0149 205.9416);
+  --color-accent: oklch(0.3076 0.0070 203.9026);
+  --color-accent-foreground: oklch(0.9281 0.0126 201.8927);
+  --color-destructive: oklch(0.6368 0.2078 25.3313);
+  --color-destructive-foreground: oklch(1.0000 0 0);
+  --color-border: oklch(0.2761 0.0056 203.3408);
+  --color-input: oklch(0.3076 0.0070 203.9026);
+  --color-ring: oklch(0.7125 0.0149 205.9416);
+}
+
+* {
+  border-color: inherit;
+}
+
+body {
+  background-color: theme(--color-background);
+  color: theme(--color-foreground);
+}

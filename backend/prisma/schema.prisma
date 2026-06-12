@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 /// 项目表 - 一个项目对应一个养成/计划任务

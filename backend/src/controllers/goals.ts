@@ -8,18 +8,32 @@ import { getRepository } from '../repositories';
 import { success, error, serverError } from '../utils/response';
 
 /**
- * 根据项目ID获取所有目标
- * @param req Express请求对象，params.projectId为项目ID
+ * 获取目标列表
+ * @param req Express请求对象，query.project_id为项目ID筛选
  * @param res Express响应对象
+ * 返回格式遵循OpenAPI规范: {success: true, data: {list: Goal[], total, page, total_pages}}
  */
 export async function getGoalsByProject(req: Request, res: Response) {
   try {
-    const { projectId } = req.params;
+    const { project_id } = req.query;
+    if (!project_id) {
+      error(res, 'project_id query parameter is required', 400);
+      return;
+    }
     const repo = await getRepository();
-    const goals = await repo.goal.findByProjectId(parseInt(projectId));
+    const goals = await repo.goal.findByProjectId(parseInt(project_id as string));
     // 按优先级升序排序（数字越小优先级越高）
     goals.sort((a, b) => a.priority - b.priority);
-    success(res, goals);
+    
+    // 遵循OpenAPI规范返回分页格式
+    const responseData = {
+      list: goals,
+      total: goals.length,
+      page: 1,
+      total_pages: 1
+    };
+    
+    success(res, responseData);
   } catch (err) {
     serverError(res, String(err));
   }
@@ -49,15 +63,15 @@ export async function getGoalById(req: Request, res: Response) {
 
 /**
  * 创建新目标
- * @param req Express请求对象，body包含projectId, name, description, priority
+ * @param req Express请求对象，body包含project_id, name, description, priority
  * @param res Express响应对象
  */
 export async function createGoal(req: Request, res: Response) {
   try {
-    const { projectId, name, description, priority = 3 } = req.body;
+    const { project_id, name, description, priority = 3 } = req.body;
 
-    if (!projectId || typeof projectId !== 'number') {
-      error(res, 'Valid projectId is required', 400);
+    if (!project_id || typeof project_id !== 'number') {
+      error(res, 'Valid project_id is required in request body', 400);
       return;
     }
 
@@ -68,7 +82,7 @@ export async function createGoal(req: Request, res: Response) {
 
     const repo = await getRepository();
     const goal = await repo.goal.create({
-      projectId,
+      projectId: project_id,
       name: name.trim(),
       description: description?.trim() || null,
       priority: Number(priority) || 3,
@@ -116,16 +130,25 @@ export async function updateGoal(req: Request, res: Response) {
 
 /**
  * 切换目标完成状态
- * @param req Express请求对象，params.id为目标ID
+ * @param req Express请求对象，params.goalId为目标ID，body.is_completed为新状态
  * @param res Express响应对象
  */
 export async function toggleGoalCompleted(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const goalId = parseInt(id);
+    const { goalId } = req.params;
+    const { is_completed } = req.body;
+    const id = parseInt(goalId);
 
     const repo = await getRepository();
-    const goal = await repo.goal.toggleCompleted(goalId);
+    const existing = await repo.goal.findById(id);
+    if (!existing) {
+      error(res, 'Goal not found', 404);
+      return;
+    }
+
+    const goal = await repo.goal.update(id, {
+      isCompleted: Boolean(is_completed)
+    });
 
     success(res, goal);
   } catch (err) {

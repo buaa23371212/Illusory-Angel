@@ -13,12 +13,14 @@ import {
 
 const router = Router();
 
-// 所有者级操作
-router.get('/:ownerType/:ownerId/constraints', getConstraintsByOwner);
-router.post('/:ownerType/:ownerId/constraints', addConstraint);
+// 添加约束
+router.post('/constraints', addConstraint);
 
 // 单个约束操作
 router.put('/constraints/:id', updateConstraint);
 router.delete('/constraints/:id', deleteConstraint);
+
+// 获取所有者的所有约束
+router.get('/constraints/:ownerType/:ownerId', getConstraintsByOwner);
 
 export default router;

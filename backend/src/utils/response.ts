@@ -4,6 +4,7 @@
  */
 
 import { Response } from 'express';
+import { convertCamelToSnake } from './converter';
 
 /**
  * 标准API响应结构
@@ -22,9 +23,10 @@ export interface ApiResponse<T = any> {
  * @param message 可选消息
  */
 export function success<T>(res: Response, data: T, message?: string): void {
+  const convertedData = convertCamelToSnake(data);
   const response: ApiResponse<T> = {
     success: true,
-    data,
+    data: convertedData,
     message
   };
   res.json(response);

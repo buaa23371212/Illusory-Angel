@@ -27,8 +27,8 @@ async function runTest(): Promise<void> {
     console.log('\n📋 步骤2：创建测试项目');
     const projectData = {
       name: '测试项目',
-      description: '这是一个用于测试的项目',
-      category: '测试'
+      // description: '这是一个用于测试的项目',
+      // category: '测试'
     };
     const projectResponse = await axios.post(`${API_BASE}/projects`, projectData);
     if (!projectResponse.data.success) {
@@ -37,13 +37,12 @@ async function runTest(): Promise<void> {
     const project = projectResponse.data.data;
     console.log(`✅ 项目创建成功，ID: ${project.projectId}, 名称: "${project.name}"`);
 
-    // 步骤3：在项目下创建目标
+    // 步骤3：创建目标（projectId在URL路径中）
     console.log('\n📋 步骤3：创建测试目标');
     const goalData = {
-      projectId: project.projectId,
       name: '测试目标',
-      description: '这是一个需要完成的测试目标',
-      priority: 1
+      // description: '这是一个需要完成的测试目标',
+      // priority: 1
     };
     const goalResponse = await axios.post(`${API_BASE}/goals/projects/${project.projectId}/goals`, goalData);
     if (!goalResponse.data.success) {
@@ -55,7 +54,7 @@ async function runTest(): Promise<void> {
 
     // 步骤4：获取项目下的所有目标，验证创建成功
     console.log('\n📋 步骤4：验证目标创建');
-    const goalsResponse = await axios.get(`${API_BASE}/goals/projects/${project.projectId}/goals`);
+    const goalsResponse = await axios.get(`${API_BASE}/goals?project_id=${project.projectId}`);
     if (!goalsResponse.data.success) {
       throw new Error(`获取目标列表失败: ${goalsResponse.data.error}`);
     }
@@ -64,7 +63,9 @@ async function runTest(): Promise<void> {
 
     // 步骤5：将目标标记为完成
     console.log('\n📋 步骤5：将目标标记为完成');
-    const toggleResponse = await axios.patch(`${API_BASE}/goals/${goal.goalId}/toggle-completed`);
+    const toggleResponse = await axios.post(`${API_BASE}/goals/${goal.goalId}/toggle-complete`, {
+      is_completed: true
+    });
     if (!toggleResponse.data.success) {
       throw new Error(`切换目标状态失败: ${toggleResponse.data.error}`);
     }

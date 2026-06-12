@@ -171,11 +171,6 @@ paths:
           schema:
             type: integer
           description: 按项目ID筛选
-        - name: parent_goal_id
-          in: query
-          schema:
-            type: integer
-          description: 按父目标筛选（NULL表示顶层目标）
         - name: is_completed
           in: query
           schema:
