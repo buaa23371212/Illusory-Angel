@@ -17,7 +17,7 @@
 完整目录树结构：
 
 ```
-game-planner/
+planner/
 ├── docs/                    # 文档目录
 │   ├── agent-gen/          # 设计文档
 │   └── examples/           # 示例记录

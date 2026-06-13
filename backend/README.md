@@ -71,7 +71,7 @@ PORT=3000
 STORAGE_TYPE=prisma
 
 # 数据库连接 URL（Prisma 使用）
-DATABASE_URL="mysql://root:password@localhost:3306/game_planner?schema=public"
+DATABASE_URL="mysql://root:password@localhost:3306/planner?schema=public"
 ```
 
 ### 初始化数据库（使用 Prisma 时）

@@ -1,101 +1,212 @@
-import { useState, useEffect } from 'react'
-import { CreateProjectDialog } from './components/CreateProjectDialog'
-import { GoalList } from './components/GoalList'
-import { Button } from './components/ui/button'
-import { Card } from './components/ui/card'
-import { apiClient } from './api/client'
-import type { Project } from './api/client'
-import { Toaster } from './components/ui/sonner'
-import { Skeleton } from './components/ui/skeleton'
-import { Plus, Target, MoreVertical, Trash2 } from 'lucide-react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './components/ui/dropdown-menu'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './components/ui/dialog'
-import { toast } from 'sonner'
-import './App.css'
+import { useState, useEffect, useCallback } from "react";
+import { CreateProjectDialog } from "./components/CreateProjectDialog";
+import { Button } from "./components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./components/ui/dialog";
+import { apiClient } from "./api/client";
+import type { Project, Goal } from "./api/client";
+import type { Plugin } from "./plugins/types";
+import type { ContentPanelExtension } from "./plugins/types";
+import { Toaster } from "./components/ui/sonner";
+import { Target } from "lucide-react";
+import { toast } from "sonner";
+import { PluginProvider, usePlugins } from "./plugins";
+import { FeatureSidebar, type FeatureType } from "./components/FeatureSidebar";
+import { ProjectsNavigation, type ProjectProgress } from "./components/ProjectsNavigation";
+import { PluginsNavigation } from "./components/PluginsNavigation";
+import { ContentArea } from "./components/ContentArea";
+import "./App.css";
 
 /**
- * 主应用组件
- * 左侧导航栏显示项目列表，右侧内容区显示选中项目的目标
+ * 主应用内容组件
+ * 使用usePlugins钩子获取插件扩展点数据
  */
-function App() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
+function AppContent() {
+  const [selectedFeature, setSelectedFeature] =
+    useState<FeatureType>("projects");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [progressCache, setProgressCache] = useState<
+    Record<number, ProjectProgress>
+  >({});
+  // 当前激活的内容区面板ID，null表示显示默认的目标列表
+  const [activeContentPanel, setActiveContentPanel] = useState<string | null>(null);
+  // 插件管理相关状态
+  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
+  const [pluginEnabled, setPluginEnabled] = useState<Map<string, boolean>>(new Map());
+
+  // 获取插件扩展点数据
+  const { getContentPanelExtensions, getProjectActionMenuItems } = usePlugins();
+  const contentPanels: ContentPanelExtension[] = getContentPanelExtensions();
+  const projectActionMenuItems: ProjectActionMenuItem[] = getProjectActionMenuItems();
+
+  /**
+   * 切换插件启用状态
+   */
+  const handleTogglePluginEnabled = (pluginId: string, enabled: boolean) => {
+    const newMap = new Map(pluginEnabled);
+    newMap.set(pluginId, enabled);
+    setPluginEnabled(newMap);
+    // TODO: 实际实现需要重新加载插件或重新注册扩展点
+    if (enabled) {
+      toast.success(`插件 "${pluginId}" 已启用`);
+    } else {
+      toast.info(`插件 "${pluginId}" 已禁用`);
+    }
+  };
+
+  /**
+   * 加载项目目标并计算进度
+   */
+  const loadProjectProgress = useCallback(async (projectId: number) => {
+    try {
+      const response = await apiClient.getGoals({ project_id: projectId });
+      const goals = response.list || [];
+      const completed = goals.filter((g: Goal) => g.is_completed === 1).length;
+      setProgressCache((prev) => ({
+        ...prev,
+        [projectId]: { total: goals.length, completed },
+      }));
+    } catch (error) {
+      console.error("Failed to load project progress:", error);
+    }
+  }, []);
+
+  /**
+   * 刷新项目进度
+   */
+  const refreshProgress = useCallback(
+    (projectId: number) => {
+      loadProjectProgress(projectId);
+    },
+    [loadProjectProgress]
+  );
+
+  /**
+   * 处理项目选择
+   */
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
+  };
+
+  /**
+   * 处理删除项目点击
+   */
+  const handleDeleteProjectClick = (project: Project, e: React.MouseEvent) => {
+    openDeleteDialog(project, e);
+  };
 
   /**
    * 加载项目列表
    */
   const loadProjects = async () => {
     try {
-      setLoading(true)
-      const data = await apiClient.getProjects()
-      setProjects(data?.list || [])
+      setLoading(true);
+      const response = await apiClient.getProjects();
+      const projectList = response.list || [];
+      setProjects(projectList);
+      if (projectList.length > 0 && !selectedProject) {
+        setSelectedProject(projectList[0]);
+      }
+      // 预加载所有项目进度
+      for (const project of projectList) {
+        await loadProjectProgress(project.project_id);
+      }
     } catch (error) {
-      console.error('加载项目失败:', error)
-      toast.error('加载项目失败，请检查后端服务是否正常运行')
+      console.error("加载项目失败:", error);
+      toast.error("加载项目失败，请检查后端服务是否正常运行");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   /**
    * 处理项目创建成功
    */
   const handleProjectCreated = (newProject: Project) => {
-    setProjects([newProject, ...projects])
-    setSelectedProject(newProject)
-    setCreateDialogOpen(false)
-    toast.success(`项目 "${newProject.name}" 创建成功`)
-  }
+    setProjects([newProject, ...projects]);
+    setSelectedProject(newProject);
+    setCreateDialogOpen(false);
+    toast.success(`项目 "${newProject.name}" 创建成功`);
+  };
 
   /**
    * 打开删除确认对话框
    */
   const openDeleteDialog = (project: Project, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setProjectToDelete(project)
-    setDeleteDialogOpen(true)
-  }
+    e.stopPropagation();
+    setProjectToDelete(project);
+    setDeleteDialogOpen(true);
+  };
 
   /**
    * 确认删除项目
    */
   const confirmDeleteProject = async () => {
-    if (!projectToDelete) return
+    if (!projectToDelete) return;
 
     try {
-      await apiClient.deleteProject(projectToDelete.project_id)
-      setProjects(projects.filter(p => p.project_id !== projectToDelete.project_id))
+      await apiClient.deleteProject(projectToDelete.project_id);
+      setProjects(
+        projects.filter((p) => p.project_id !== projectToDelete.project_id)
+      );
       if (selectedProject?.project_id === projectToDelete.project_id) {
-        setSelectedProject(null)
+        setSelectedProject(null);
       }
-      toast.success('项目删除成功')
+      toast.success("项目删除成功");
     } catch (error) {
-      console.error('删除项目失败:', error)
-      toast.error('删除项目失败')
+      console.error("删除项目失败:", error);
+      toast.error("删除项目失败");
     } finally {
-      setDeleteDialogOpen(false)
-      setProjectToDelete(null)
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
     }
-  }
+  };
 
   /**
    * 处理目标变化，重新加载项目统计
    */
   const handleGoalChange = () => {
-    loadProjects()
-  }
+    if (selectedProject) {
+      refreshProgress(selectedProject.project_id);
+    }
+  };
+
+  /**
+   * 切换内容面板
+   */
+  const handleContentPanelChange = (panelId: string | null) => {
+    setActiveContentPanel(panelId);
+  };
+
+    // 将切换函数暴露到window，方便插件从项目操作菜单切换面板
+  useEffect(() => {
+    (window as any).__setActiveContentPanel = (panelId: string) => {
+      setActiveContentPanel(panelId);
+    };
+    return () => {
+      delete (window as any).__setActiveContentPanel;
+    };
+  }, []);
+
+  // 当选中项目变化时，重置内容面板到默认
+  useEffect(() => {
+    setActiveContentPanel(null);
+  }, [selectedProject]);
 
   // 初始化加载
   useEffect(() => {
-    loadProjects()
-  }, [])
-
-  // 统计信息
-  const totalProjects = projects.length
+    loadProjects();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -106,121 +217,53 @@ function App() {
             <Target className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold">Planner</h1>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            新建项目
-          </Button>
         </div>
       </header>
 
-      {/* 主体内容：左侧导航 + 右侧内容区 */}
+      {/* 主体内容：三栏布局 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 左侧导航栏 - 项目列表 */}
-        <aside className="w-80 border-r bg-muted/30 flex flex-col overflow-hidden">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">我的项目</h2>
-              <span className="text-sm text-muted-foreground">{totalProjects} 个项目</span>
-            </div>
-          </div>
+        {/* 最左侧：功能选择栏 */}
+        <FeatureSidebar
+          selectedFeature={selectedFeature}
+          onFeatureChange={setSelectedFeature}
+        />
 
-          <div className="flex-1 overflow-y-auto p-2">
-            {loading ? (
-              // 加载骨架屏
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-3 rounded-lg">
-                    <Skeleton className="h-5 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : projects.length === 0 ? (
-              // 空状态
-              <div className="text-center py-8 px-2">
-                <p className="text-muted-foreground text-sm mb-4">还没有项目</p>
-                <Button size="sm" className="w-full" onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  创建项目
-                </Button>
-              </div>
-            ) : (
-              // 项目列表
-              <div className="space-y-1">
-                {projects.map((project) => (
-                  <button
-                    key={project.project_id}
-                    onClick={() => setSelectedProject(project)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors group flex items-start justify-between ${
-                      selectedProject?.project_id === project.project_id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className={`font-medium truncate ${
-                        selectedProject?.project_id === project.project_id
-                          ? 'text-primary-foreground'
-                          : ''
-                      }`}>
-                        {project.name}
-                      </p>
-                      {project.description && (
-                        <p className={`text-xs truncate mt-1 ${
-                          selectedProject?.project_id === project.project_id
-                            ? 'text-primary-foreground/80'
-                            : 'text-muted-foreground'
-                        }`}>
-                          {project.description}
-                        </p>
-                      )}
-                      <p className={`text-xs mt-1 ${
-                        selectedProject?.project_id === project.project_id
-                          ? 'text-primary-foreground/70'
-                          : 'text-muted-foreground'
-                      }`}>
-                        {new Date(project.created_at).toLocaleDateString('zh-CN')}
-                      </p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className={`h-6 w-6 ${
-                            selectedProject?.project_id === project.project_id
-                              ? 'text-primary-foreground hover:bg-primary-foreground/20'
-                              : 'opacity-0 group-hover:opacity-100'
-                          }`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreVertical className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={(e) => openDeleteDialog(project, e)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          删除项目
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </aside>
+        {/* 中间：功能导航栏 - 根据选中的功能显示不同内容 */}
+        {selectedFeature === "projects" && (
+          <ProjectsNavigation
+          projects={projects}
+          selectedProject={selectedProject}
+          onProjectSelect={handleProjectSelect}
+          onDeleteProject={handleDeleteProjectClick}
+          onCreateProject={() => setCreateDialogOpen(true)}
+          loading={loading}
+          progressCache={progressCache}
+          projectActionMenuItems={projectActionMenuItems}
+          activeContentPanel={activeContentPanel}
+          onContentPanelChange={handleContentPanelChange}
+        />
+        )}
 
-        {/* 右侧内容区 - 目标列表 */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <GoalList
-            selectedProject={selectedProject}
-            onGoalChange={handleGoalChange}
+        {selectedFeature === "plugins" && (
+          <PluginsNavigation
+            selectedPlugin={selectedPlugin}
+            onPluginSelect={setSelectedPlugin}
+            pluginEnabled={pluginEnabled}
+            onToggleEnabled={handleTogglePluginEnabled}
           />
-        </main>
+        )}
+
+        {/* 最右侧：主体内容区 - 根据选中的功能显示不同内容 */}
+        <ContentArea
+          selectedFeature={selectedFeature}
+          selectedProject={selectedProject}
+          onGoalChange={handleGoalChange}
+          selectedPlugin={selectedPlugin}
+          pluginEnabled={pluginEnabled}
+          onTogglePluginEnabled={handleTogglePluginEnabled}
+          activeContentPanel={activeContentPanel}
+          contentPanels={contentPanels}
+        />
       </div>
 
       {/* 创建项目对话框 */}
@@ -238,24 +281,41 @@ function App() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              你确定要删除项目 "{projectToDelete?.name}" 吗？此操作将删除该项目下的所有目标，且无法撤销。
+              你确定要删除项目 "{projectToDelete?.name}"
+              吗？此操作将删除该项目下的所有目标，且无法撤销。
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               取消
             </Button>
             <Button variant="destructive" onClick={confirmDeleteProject}>
               删除
             </Button>
-          </DialogFooter>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Toast 通知 */}
       <Toaster />
     </div>
-  )
+  );
 }
 
-export default App
+/**
+ * 主应用组件
+ * 三栏布局：最左侧功能选择栏 + 中间功能导航栏 + 右侧主体内容区
+ * 已将各部分提取为独立组件，保持主文件简洁
+ */
+function App() {
+  return (
+    <PluginProvider>
+      <AppContent />
+    </PluginProvider>
+  );
+}
+
+export default App;

@@ -1,5 +1,5 @@
 {
-  "name": "game-planner-backend",
+  "name": "planner-backend",
   "version": "1.0.0",
   "description": "养成计划器后端API",
   "main": "dist/index.js",
@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "keywords": [
-    "game-planner",
+    "planner",
     "todo",
     "goal-tracking"
   ],

@@ -26,7 +26,7 @@ export function setupOpenAPIRoutes(app: express.Application): void {
       swaggerUi.serve,
       swaggerUi.setup(openapiSpec, {
         explorer: true,
-        customSiteTitle: 'Game Planner API Documentation'
+        customSiteTitle: 'Planner API Documentation'
       })
     );
 

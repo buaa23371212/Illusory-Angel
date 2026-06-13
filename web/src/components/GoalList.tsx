@@ -9,6 +9,7 @@ import { Label } from './ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Trash2, Plus, CheckCircle2, Target } from 'lucide-react'
 import { toast } from 'sonner'
+import { usePluginRegistry } from '../plugins/hooks'
 
 /**
  * 目标列表组件属性
@@ -105,15 +106,14 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
     }
   }
 
+  // 获取插件注册表中的目标卡片扩展
+  const { pluginRegistry } = usePluginRegistry();
+  const goalCardExtensions = pluginRegistry.getGoalCardExtensions();
+
   // 当选中项目变化时重新加载目标
   useEffect(() => {
     loadGoals()
   }, [selectedProject?.project_id])
-
-  // 统计信息
-  const completedCount = goals.filter(g => g.is_completed === 1).length
-  const totalCount = goals.length
-  const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   if (!selectedProject) {
     return (
@@ -131,7 +131,7 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
 
   return (
     <div className="space-y-6">
-      {/* 项目信息和进度 */}
+      {/* 项目信息和添加按钮 */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">{selectedProject.name}</h2>
@@ -144,27 +144,6 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
           添加目标
         </Button>
       </div>
-
-      {/* 进度卡片 */}
-      {totalCount > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">完成进度</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between text-sm mb-2">
-              <span>{completedCount}/{totalCount} 已完成</span>
-              <span className="font-medium">{progressPercentage}%</span>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-all"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* 目标列表 */}
       <div className="space-y-3">
@@ -219,6 +198,21 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
                         <p className="text-sm text-muted-foreground break-words mt-1">
                           {goal.description}
                         </p>
+                      )}
+                      {/* 插件注册的目标卡片扩展内容 */}
+                      {goalCardExtensions.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {goalCardExtensions.map((extension) => {
+                            const ExtensionComponent = extension.component;
+                            return (
+                              <ExtensionComponent
+                                key={extension.id}
+                                goal={goal}
+                                projectId={selectedProject.project_id}
+                              />
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                     <Button
