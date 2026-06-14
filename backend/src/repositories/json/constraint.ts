@@ -38,6 +38,15 @@ export class ConstraintJsonRepository extends BaseJsonRepository<Constraint> imp
   }
 
   /**
+   * 根据所有者类型获取所有约束（不限制ownerId）
+   */
+  async findByOwnerType(ownerType: OwnerType): Promise<Constraint[]> {
+    return this.data.filter(
+      item => item.ownerType === ownerType && !item.isDeleted
+    );
+  }
+
+  /**
    * 根据ID查找约束
    */
   async findById(id: number): Promise<Constraint | null> {

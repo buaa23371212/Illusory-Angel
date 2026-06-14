@@ -11,7 +11,7 @@ import {
 import { apiClient } from "./api/client";
 import type { Project, Goal } from "./api/client";
 import type { Plugin } from "./plugins/types";
-import type { ContentPanelExtension } from "./plugins/types";
+import type { ContentPanelExtension, ProjectActionMenuItem } from "./plugins/types";
 import { Toaster } from "./components/ui/sonner";
 import { Target } from "lucide-react";
 import { toast } from "sonner";
@@ -70,7 +70,7 @@ function AppContent() {
   const loadProjectProgress = useCallback(async (projectId: number) => {
     try {
       const response = await apiClient.getGoals({ project_id: projectId });
-      const goals = response.list || [];
+      const goals = response?.list || [];
       const completed = goals.filter((g: Goal) => g.is_completed === 1).length;
       setProgressCache((prev) => ({
         ...prev,
@@ -112,7 +112,7 @@ function AppContent() {
     try {
       setLoading(true);
       const response = await apiClient.getProjects();
-      const projectList = response.list || [];
+      const projectList = response?.list || [];
       setProjects(projectList);
       if (projectList.length > 0 && !selectedProject) {
         setSelectedProject(projectList[0]);

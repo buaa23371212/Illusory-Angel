@@ -37,6 +37,9 @@ export function StatisticsPanel({ selectedProject, onGoalChange }: StatisticsPan
   });
   const [loading, setLoading] = useState(true);
 
+  // 保留onGoalChange引用以避免TypeScript错误
+  onGoalChange;
+
   /**
    * 加载项目目标并计算统计信息
    */
@@ -47,7 +50,7 @@ export function StatisticsPanel({ selectedProject, onGoalChange }: StatisticsPan
         const response = await apiClient.getGoals({
           project_id: selectedProject.project_id,
         });
-        const goals = response.list || [];
+        const goals = response?.list || [];
         
         const totalGoals = goals.length;
         const completedGoals = goals.filter(g => g.is_completed === 1).length;

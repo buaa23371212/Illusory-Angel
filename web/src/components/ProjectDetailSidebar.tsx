@@ -1,7 +1,6 @@
 import React from "react";
 import type { Project } from "../api/client";
 import { Card } from "./ui/card";
-import { usePluginRegistry } from "../plugins/hooks";
 
 /**
  * 项目详情侧边栏组件属性接口
@@ -13,14 +12,11 @@ interface ProjectDetailSidebarProps {
 
 /**
  * 项目详情侧边栏组件
- * 最右侧侧边栏，用于展示插件注册的扩展面板
+ * 最右侧侧边栏，用于展示项目基本信息
  */
 export const ProjectDetailSidebar: React.FC<ProjectDetailSidebarProps> = ({
   selectedProject,
 }) => {
-  const { pluginRegistry } = usePluginRegistry();
-  const sidebarExtensions = pluginRegistry.getSidebarPanelExtensions();
-
   if (!selectedProject) {
     return (
       <aside className="w-72 border-l bg-muted/30 flex flex-col overflow-hidden hidden lg:block">
@@ -50,25 +46,6 @@ export const ProjectDetailSidebar: React.FC<ProjectDetailSidebarProps> = ({
             )}
           </div>
         </Card>
-
-        {/* 插件注册的侧边栏面板扩展 */}
-        {sidebarExtensions.map((extension) => {
-          const ExtensionComponent = extension.component;
-          return (
-            <Card key={extension.id} className="p-4">
-              <h3 className="font-semibold mb-3">{extension.title}</h3>
-              <ExtensionComponent selectedProject={selectedProject} />
-            </Card>
-          );
-        })}
-
-        {/* 如果没有插件扩展，显示空状态 */}
-        {sidebarExtensions.length === 0 && (
-          <div className="text-center py-6 text-muted-foreground">
-            <p className="text-sm">暂无扩展信息</p>
-            <p className="text-xs mt-1">启用插件后将在此显示扩展内容</p>
-          </div>
-        )}
       </div>
     </aside>
   );

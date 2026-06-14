@@ -71,7 +71,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
 export async function getProjectById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const projectId = parseInt(id);
+    const projectId = parseInt(id as string);
 
     if (isNaN(projectId)) {
       error(res, 'Invalid project ID');
@@ -100,7 +100,7 @@ export async function getProjectById(req: Request, res: Response): Promise<void>
 export async function updateProject(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const projectId = parseInt(id);
+    const projectId = parseInt(id as string);
     const { name, description, category } = req.body;
 
     if (isNaN(projectId)) {
@@ -138,7 +138,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 export async function deleteProject(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const projectId = parseInt(id);
+    const projectId = parseInt(id as string);
 
     if (isNaN(projectId)) {
       error(res, 'Invalid project ID');
@@ -170,7 +170,7 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
 export async function getProjectConstraints(req: Request, res: Response): Promise<void> {
   try {
     const { projectId } = req.params;
-    const projectIdNum = parseInt(projectId);
+    const projectIdNum = parseInt(projectId as string);
 
     if (isNaN(projectIdNum)) {
       error(res, 'Invalid project ID');

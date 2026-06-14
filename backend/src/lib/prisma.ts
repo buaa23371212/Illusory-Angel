@@ -10,7 +10,18 @@ import mariadb from 'mariadb';
 // Prisma 7 的 client 引擎类型始终需要适配器
 // 即使在 STORAGE_TYPE=json 模式下不使用，也需要创建一个适配器
 const databaseUrl = process.env.DATABASE_URL;
-const adapter = new PrismaMariaDb({ connectionString: databaseUrl });
+
+// 解析连接字符串为 PoolConfig 格式
+const url = new URL(databaseUrl || '');
+const poolConfig: mariadb.PoolConfig = {
+  host: url.hostname,
+  port: url.port ? parseInt(url.port) : 3306,
+  user: url.username,
+  password: url.password,
+  database: url.pathname.slice(1) // 移除开头的斜杠
+};
+
+const adapter = new PrismaMariaDb(poolConfig);
 
 let prisma: PrismaClient;
 

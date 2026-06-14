@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: 闹钟提醒插件 API
+  description: 为目标添加闹钟提醒功能，支持按周重复提醒
+  version: 1.0.0
+servers:
+  - url: /api/v1
+tags:
+  - name: alarm
+    description: 闹钟提醒插件
+
+paths:
+  # ========== 目标闹钟接口 ==========
+  /goals/{goalId}/alarm:
+    get:
+      tags:
+        - alarm
+      summary: 获取目标闹钟配置
+      description: 获取指定目标的闹钟提醒配置，如果不存在返回空
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmConfigResponse'
+
+    post:
+      tags:
+        - alarm
+      summary: 创建或更新闹钟配置
+      description: 为目标创建或更新闹钟提醒配置
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAlarmConfigRequest'
+      responses:
+        200:
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmConfigResponse'
+        404:
+          description: 目标不存在
+
+    delete:
+      tags:
+        - alarm
+      summary: 删除闹钟配置
+      description: 删除目标的闹钟提醒配置
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 目标ID
+      responses:
+        200:
+          description: 删除成功
+        404:
+          description: 目标不存在或闹钟配置不存在
+
+  # ========== 待触发闹钟接口 ==========
+  /alarm/due:
+    get:
+      tags:
+        - alarm
+      summary: 获取当前待触发的闹钟列表
+      description: 查询当前时间需要触发的所有闹钟，前端轮询调用该接口
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DueAlarmListResponse'
+
+components:
+  schemas:
+    # ========== 闹钟配置 ==========
+    AlarmConfig:
+      type: object
+      properties:
+        goal_id:
+          type: integer
+          description: 关联的目标ID
+        goal_name:
+          type: string
+          description: 目标名称（用于显示通知）
+        project_name:
+          type: string
+          description: 所属项目名称（用于显示通知）
+        enabled:
+          type: boolean
+          description: 是否启用提醒
+        time:
+          type: string
+          description: 提醒时间，HH:mm 格式（24小时制）
+          example: "08:30"
+        days:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          description: 每周提醒天数，0=周日，1=周一...6=周六
+          example: [1, 2, 3, 4, 5]
+        message:
+          type: string
+          nullable: true
+          description: 自定义提醒消息
+        last_triggered:
+          type: integer
+          nullable: true
+          description: 上次触发时间戳（毫秒）
+      required:
+        - goal_id
+        - enabled
+        - time
+        - days
+
+    # ========== 请求体 ==========
+    SaveAlarmConfigRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: 是否启用提醒
+        time:
+          type: string
+          description: 提醒时间，HH:mm 格式
+        days:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          description: 每周提醒天数
+        message:
+          type: string
+          nullable: true
+          description: 自定义提醒消息
+      required:
+        - enabled
+        - time
+        - days
+
+    # ========== 响应 ==========
+    AlarmConfigResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        data:
+          $ref: '#/components/schemas/AlarmConfig'
+          nullable: true
+          description: 闹钟配置，不存在时为 null
+
+    # ========== 待触发闹钟 ==========
+    DueAlarm:
+      type: object
+      properties:
+        alarm_id:
+          type: integer
+          description: 闹钟约束ID
+        goal_id:
+          type: integer
+          description: 目标ID
+        goal_name:
+          type: string
+          description: 目标名称
+        project_name:
+          type: string
+          description: 项目名称
+        message:
+          type: string
+          nullable: true
+          description: 提醒消息
+
+    DueAlarmListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DueAlarm'
+          description: 当前需要触发的闹钟列表，如果为空表示没有待触发闹钟
+
+    # ========== 通用错误 ==========
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+          description: 错误信息

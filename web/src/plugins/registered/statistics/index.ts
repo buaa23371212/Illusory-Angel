@@ -10,10 +10,9 @@ import {
 } from '../../';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { BarChart3 } from 'lucide-react';
-import { usePluginContext } from '../../../plugins/PluginContext';
 
-// 存储内容面板切换回调，方便从项目操作菜单项调用
-let contentPanelChangeCallback: ((panelId: string | null) => void) | null = null;
+// 保留未使用的声明，但不赋值以避免错误
+declare let contentPanelChangeCallback: ((panelId: string | null) => void) | null;
 
 /**
  * 插件信息
@@ -55,8 +54,8 @@ export const statisticsPlugin: Plugin = {
         // 这里需要获取App组件中的activeContentPanel状态来切换
         // 由于插件系统是在App外部初始化的，我们通过window来获取切换函数
         // 这个函数会在App组件启动时设置
-        if (window.__setActiveContentPanel) {
-          window.__setActiveContentPanel('project-statistics');
+        if ((window as any).__setActiveContentPanel) {
+          (window as any).__setActiveContentPanel('project-statistics');
         }
       },
     });

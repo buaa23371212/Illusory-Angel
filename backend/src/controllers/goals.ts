@@ -48,7 +48,7 @@ export async function getGoalById(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const repo = await getRepository();
-    const goal = await repo.goal.findById(parseInt(id));
+    const goal = await repo.goal.findById(parseInt(id as string));
 
     if (!goal) {
       error(res, 'Goal not found', 404);
@@ -105,7 +105,7 @@ export async function updateGoal(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const { name, description, priority, isCompleted } = req.body;
-    const goalId = parseInt(id);
+    const goalId = parseInt(id as string);
 
     const repo = await getRepository();
     const existing = await repo.goal.findById(goalId);
@@ -137,7 +137,7 @@ export async function toggleGoalCompleted(req: Request, res: Response) {
   try {
     const { goalId } = req.params;
     const { is_completed } = req.body;
-    const id = parseInt(goalId);
+    const id = parseInt(goalId as string);
 
     const repo = await getRepository();
     const existing = await repo.goal.findById(id);
@@ -192,7 +192,7 @@ export async function batchMoveGoals(req: Request, res: Response) {
 export async function deleteGoal(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const goalId = parseInt(id);
+    const goalId = parseInt(id as string);
 
     const repo = await getRepository();
     const existing = await repo.goal.findById(goalId);

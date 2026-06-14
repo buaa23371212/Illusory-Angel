@@ -33,7 +33,7 @@ export async function getConstraintsByOwner(req: Request, res: Response) {
   try {
     const { ownerType, ownerId } = req.params;
 
-    if (!ownerType || !['PROJECT', 'GOAL'].includes(ownerType)) {
+    if (!ownerType || !['PROJECT', 'GOAL'].includes(ownerType as string)) {
       error(res, 'Valid ownerType (PROJECT/GOAL) is required', 400);
       return;
     }
@@ -41,7 +41,7 @@ export async function getConstraintsByOwner(req: Request, res: Response) {
     const repo = await getRepository();
     const constraints = await repo.constraint.findByOwner(
       ownerType as OwnerType,
-      parseInt(ownerId)
+      parseInt(ownerId as string)
     );
 
     success(res, constraints);
@@ -100,7 +100,7 @@ export async function updateConstraint(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const { constraintName, params } = req.body;
-    const constraintId = parseInt(id);
+    const constraintId = parseInt(id as string);
 
     const repo = await getRepository();
     const existing = await repo.constraint.findById(constraintId);
@@ -138,7 +138,7 @@ export async function updateConstraint(req: Request, res: Response) {
 export async function deleteConstraint(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const constraintId = parseInt(id);
+    const constraintId = parseInt(id as string);
 
     const repo = await getRepository();
     const existing = await repo.constraint.findById(constraintId);

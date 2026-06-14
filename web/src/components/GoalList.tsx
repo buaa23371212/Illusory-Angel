@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../api/client'
 import type { Project, Goal } from '../api/client'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
-import { Trash2, Plus, CheckCircle2, Target } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from './ui/dropdown-menu'
+import { Trash2, Plus, Target, MoreVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePluginRegistry } from '../plugins/hooks'
+import { getGoalActionMenuItems } from '../plugins/registry'
+import type { GoalActionMenuItem } from '../plugins/types'
 
 /**
  * 目标列表组件属性
@@ -22,6 +31,7 @@ interface GoalListProps {
 /**
  * 目标列表组件
  * 在内容区展示选中项目的所有目标，支持增删改查操作
+ * 如果插件注册了目标卡片渲染器，则使用插件提供的渲染方式
  */
 export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -106,9 +116,15 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
     }
   }
 
-  // 获取插件注册表中的目标卡片扩展
+  // 获取插件注册表中的目标卡片渲染器
   const { pluginRegistry } = usePluginRegistry();
-  const goalCardExtensions = pluginRegistry.getGoalCardExtensions();
+  const goalCardRenderers = pluginRegistry.getGoalCardRenderers();
+  // 获取所有注册的目标操作菜单项
+  const goalActionMenuItems: GoalActionMenuItem[] = getGoalActionMenuItems();
+
+  // 如果有自定义目标卡片渲染器，使用第一个注册的渲染器替换单个卡片设计
+  // TODO: 未来可以支持用户选择使用哪个渲染器
+  const customCardRenderer = goalCardRenderers.length > 0 ? goalCardRenderers[0] : null;
 
   // 当选中项目变化时重新加载目标
   useEffect(() => {
@@ -177,56 +193,87 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
         ) : (
           // 目标列表 - 按顺序从上到下展示
           <div className="space-y-3">
-            {goals.map((goal) => (
-              <Card key={goal.goal_id} className="transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={goal.is_completed === 1}
-                      onCheckedChange={() => handleToggleGoal(goal)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-base break-words ${
-                          goal.is_completed === 1 ? 'line-through text-muted-foreground' : 'font-medium'
-                        }`}
-                      >
-                        {goal.name}
-                      </p>
-                      {goal.description && (
-                        <p className="text-sm text-muted-foreground break-words mt-1">
-                          {goal.description}
+            {goals.map((goal) => {
+              // 如果有自定义卡片渲染器，使用自定义渲染器替换单个卡片设计
+              if (customCardRenderer) {
+                const CustomCardComponent = customCardRenderer.component;
+                return (
+                  <CustomCardComponent
+                    key={goal.goal_id}
+                    goal={goal}
+                    projectId={selectedProject.project_id}
+                    onToggleComplete={handleToggleGoal}
+                    onDelete={handleDeleteGoal}
+                  />
+                );
+              }
+              // 使用默认卡片设计
+              return (
+                <Card key={goal.goal_id} className="transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={goal.is_completed === 1}
+                        onCheckedChange={() => handleToggleGoal(goal)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-base break-words ${
+                            goal.is_completed === 1 ? 'line-through text-muted-foreground' : 'font-medium'
+                          }`}
+                        >
+                          {goal.name}
                         </p>
-                      )}
-                      {/* 插件注册的目标卡片扩展内容 */}
-                      {goalCardExtensions.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {goalCardExtensions.map((extension) => {
-                            const ExtensionComponent = extension.component;
-                            return (
-                              <ExtensionComponent
-                                key={extension.id}
-                                goal={goal}
-                                projectId={selectedProject.project_id}
-                              />
-                            );
-                          })}
-                        </div>
-                      )}
+                        {goal.description && (
+                          <p className="text-sm text-muted-foreground break-words mt-1">
+                            {goal.description}
+                          </p>
+                        )}
+                      </div>
+                      {/* 目标操作折叠工具栏 */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-muted-foreground"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {/* 渲染插件注册的自定义目标操作菜单项 */}
+                          {goalActionMenuItems.map((item) => (
+                            <DropdownMenuItem
+                              key={item.id}
+                              onClick={() => {
+                                if (selectedProject) {
+                                  item.onClick(goal, selectedProject.project_id);
+                                }
+                              }}
+                            >
+                              {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                              {item.label}
+                            </DropdownMenuItem>
+                          ))}
+                          {/* 如果有自定义菜单项且有删除选项，添加分隔线 */}
+                          {goalActionMenuItems.length > 0 && <DropdownMenuSeparator />}
+                          {/* 默认删除操作 */}
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteGoal(goal.goal_id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDeleteGoal(goal.goal_id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

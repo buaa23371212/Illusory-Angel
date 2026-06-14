@@ -4,12 +4,12 @@
  */
 import type { Plugin } from '../../';
 import { pluginRegistry } from '../../';
-import { PriorityBadge } from './components/PriorityBadge';
+import { PriorityGoalCard } from './components/PriorityGoalCard';
 import { Flag } from 'lucide-react';
 
 /**
  * 优先级标签插件
- * 在目标卡片底部添加优先级标签显示，并在创建目标表单添加优先级选择
+ * 使用自定义目标卡片渲染，在目标卡片中添加优先级标签显示
  */
 export const priorityTagPlugin: Plugin = {
   id: 'priority-tag',
@@ -28,11 +28,11 @@ export const priorityTagPlugin: Plugin = {
       },
     });
 
-    // 注册目标卡片扩展，显示优先级标签
-    pluginRegistry.registerGoalCardExtension({
-      id: 'priority-badge',
-      component: PriorityBadge,
-      order: 5,
+    // 注册自定义目标卡片渲染器，显示优先级标签
+    pluginRegistry.registerGoalCardRenderer({
+      id: 'priority-goal-card',
+      name: '带优先级标签的目标卡片',
+      component: PriorityGoalCard,
     });
   },
 };

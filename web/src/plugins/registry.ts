@@ -1,14 +1,10 @@
 import type {
   PluginRegistry,
   NavigationMenuItem,
-  GoalListRenderer,
-  GoalCardExtension,
-  SidebarPanelExtension,
+  GoalCardRenderer,
   ProjectActionMenuItem,
   GoalActionMenuItem,
   FormFieldExtension,
-  DetailBottomExtension,
-  HeaderActionExtension,
   ContentPanelExtension,
   Plugin,
 } from './types';
@@ -89,84 +85,34 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 注册目标列表渲染器
+   * 注册目标卡片渲染器
    */
-  registerGoalListRenderer(renderer: GoalListRenderer): void {
-    this.registry.goalListRenderers = this.registry.goalListRenderers
+  registerGoalCardRenderer(renderer: GoalCardRenderer): void {
+    this.registry.goalCardRenderers = this.registry.goalCardRenderers
       .filter(existing => existing.id !== renderer.id)
       .concat([renderer]);
   }
 
   /**
-   * 注销目标列表渲染器
+   * 注销目标卡片渲染器
    */
-  unregisterGoalListRenderer(id: string): void {
-    this.registry.goalListRenderers = this.registry.goalListRenderers
+  unregisterGoalCardRenderer(id: string): void {
+    this.registry.goalCardRenderers = this.registry.goalCardRenderers
       .filter(renderer => renderer.id !== id);
   }
 
   /**
-   * 获取目标列表渲染器
+   * 获取所有目标卡片渲染器
    */
-  getGoalListRenderers(): GoalListRenderer[] {
-    return [...this.registry.goalListRenderers];
+  getGoalCardRenderers(): GoalCardRenderer[] {
+    return [...this.registry.goalCardRenderers];
   }
 
   /**
-   * 获取指定ID的目标列表渲染器
+   * 获取指定ID的目标卡片渲染器
    */
-  getGoalListRenderer(id: string): GoalListRenderer | undefined {
-    return this.registry.goalListRenderers.find(r => r.id === id);
-  }
-
-  /**
-   * 注册目标卡片扩展
-   */
-  registerGoalCardExtension(extension: GoalCardExtension): void {
-    this.registry.goalCardExtensions = this.registry.goalCardExtensions
-      .filter(existing => existing.id !== extension.id)
-      .concat([extension]);
-    this.sortByOrder(this.registry.goalCardExtensions);
-  }
-
-  /**
-   * 注销目标卡片扩展
-   */
-  unregisterGoalCardExtension(id: string): void {
-    this.registry.goalCardExtensions = this.registry.goalCardExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
-   * 获取所有目标卡片扩展（已排序）
-   */
-  getGoalCardExtensions(): GoalCardExtension[] {
-    return [...this.registry.goalCardExtensions];
-  }
-
-  /**
-   * 注册侧边栏面板扩展
-   */
-  registerSidebarPanelExtension(extension: SidebarPanelExtension): void {
-    this.registry.sidebarPanelExtensions = this.registry.sidebarPanelExtensions
-      .filter(existing => existing.id !== extension.id)
-      .concat([extension]);
-    this.sortByOrder(this.registry.sidebarPanelExtensions);
-  }
-
-  /**
-   * 注销侧边栏面板扩展
-   */
-  unregisterSidebarPanelExtension(id: string): void {
-    this.registry.sidebarPanelExtensions = this.registry.sidebarPanelExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
-   * 获取所有侧边栏面板扩展（已排序）
-   */
-  getSidebarPanelExtensions(): SidebarPanelExtension[] {
-    return [...this.registry.sidebarPanelExtensions];
+  getGoalCardRenderer(id: string): GoalCardRenderer | undefined {
+    return this.registry.goalCardRenderers.find(r => r.id === id);
   }
 
   /**
@@ -243,56 +189,6 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 注册详情页底部扩展
-   */
-  registerDetailBottomExtension(extension: DetailBottomExtension): void {
-    this.registry.detailBottomExtensions = this.registry.detailBottomExtensions
-      .filter(existing => existing.id !== extension.id)
-      .concat([extension]);
-    this.sortByOrder(this.registry.detailBottomExtensions);
-  }
-
-  /**
-   * 注销详情页底部扩展
-   */
-  unregisterDetailBottomExtension(id: string): void {
-    this.registry.detailBottomExtensions = this.registry.detailBottomExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
-   * 获取所有详情页底部扩展（已排序）
-   */
-  getDetailBottomExtensions(): DetailBottomExtension[] {
-    return [...this.registry.detailBottomExtensions];
-  }
-
-  /**
-   * 注册页面头部操作区扩展
-   */
-  registerHeaderActionExtension(extension: HeaderActionExtension): void {
-    this.registry.headerActionExtensions = this.registry.headerActionExtensions
-      .filter(existing => existing.id !== extension.id)
-      .concat([extension]);
-    this.sortByOrder(this.registry.headerActionExtensions);
-  }
-
-  /**
-   * 注销页面头部操作区扩展
-   */
-  unregisterHeaderActionExtension(id: string): void {
-    this.registry.headerActionExtensions = this.registry.headerActionExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
-   * 获取所有页面头部操作区扩展（已排序）
-   */
-  getHeaderActionExtensions(): HeaderActionExtension[] {
-    return [...this.registry.headerActionExtensions];
-  }
-
-  /**
    * 注册内容区面板扩展
    */
   registerContentPanelExtension(extension: ContentPanelExtension): void {
@@ -351,41 +247,27 @@ export const pluginRegistry = new PluginRegistrySingleton();
  */
 export const registerPlugin = (plugin: Plugin) => pluginRegistry.registerPlugin(plugin);
 export const registerNavigationMenuItem = (item: NavigationMenuItem) => pluginRegistry.registerNavigationMenuItem(item);
-export const registerGoalListRenderer = (renderer: GoalListRenderer) => pluginRegistry.registerGoalListRenderer(renderer);
-export const registerGoalCardExtension = (extension: GoalCardExtension) => pluginRegistry.registerGoalCardExtension(extension);
-export const registerSidebarPanelExtension = (extension: SidebarPanelExtension) => pluginRegistry.registerSidebarPanelExtension(extension);
 export const registerProjectActionMenuItem = (item: ProjectActionMenuItem) => pluginRegistry.registerProjectActionMenuItem(item);
 export const registerGoalActionMenuItem = (item: GoalActionMenuItem) => pluginRegistry.registerGoalActionMenuItem(item);
+export const registerGoalCardRenderer = (renderer: GoalCardRenderer) => pluginRegistry.registerGoalCardRenderer(renderer);
 export const registerFormFieldExtension = (extension: FormFieldExtension) => pluginRegistry.registerFormFieldExtension(extension);
-export const registerDetailBottomExtension = (extension: DetailBottomExtension) => pluginRegistry.registerDetailBottomExtension(extension);
-export const registerHeaderActionExtension = (extension: HeaderActionExtension) => pluginRegistry.registerHeaderActionExtension(extension);
 export const registerContentPanelExtension = (extension: ContentPanelExtension) => pluginRegistry.registerContentPanelExtension(extension);
-export const registerProjectToolbarItem = (item: ProjectToolbarItem) => pluginRegistry.registerProjectToolbarItem(item);
 
 // 注销方法导出
 export const unregisterNavigationMenuItem = (id: string) => pluginRegistry.unregisterNavigationMenuItem(id);
-export const unregisterGoalListRenderer = (id: string) => pluginRegistry.unregisterGoalListRenderer(id);
-export const unregisterGoalCardExtension = (id: string) => pluginRegistry.unregisterGoalCardExtension(id);
-export const unregisterSidebarPanelExtension = (id: string) => pluginRegistry.unregisterSidebarPanelExtension(id);
 export const unregisterProjectActionMenuItem = (id: string) => pluginRegistry.unregisterProjectActionMenuItem(id);
 export const unregisterGoalActionMenuItem = (id: string) => pluginRegistry.unregisterGoalActionMenuItem(id);
+export const unregisterGoalCardRenderer = (id: string) => pluginRegistry.unregisterGoalCardRenderer(id);
 export const unregisterFormFieldExtension = (id: string) => pluginRegistry.unregisterFormFieldExtension(id);
-export const unregisterDetailBottomExtension = (id: string) => pluginRegistry.unregisterDetailBottomExtension(id);
-export const unregisterHeaderActionExtension = (id: string) => pluginRegistry.unregisterHeaderActionExtension(id);
 export const unregisterContentPanelExtension = (id: string) => pluginRegistry.unregisterContentPanelExtension(id);
-export const unregisterProjectToolbarItem = (id: string) => pluginRegistry.unregisterProjectToolbarItem(id);
 
 // 获取方法导出
 export function getNavigationMenuItems() { return pluginRegistry.getNavigationMenuItems(); }
-export function getGoalListRenderers() { return pluginRegistry.getGoalListRenderers(); }
-export function getGoalCardExtensions() { return pluginRegistry.getGoalCardExtensions(); }
-export function getSidebarPanelExtensions() { return pluginRegistry.getSidebarPanelExtensions(); }
 export function getProjectActionMenuItems() { return pluginRegistry.getProjectActionMenuItems(); }
 export function getGoalActionMenuItems() { return pluginRegistry.getGoalActionMenuItems(); }
+export function getGoalCardRenderers() { return pluginRegistry.getGoalCardRenderers(); }
+export function getGoalCardRenderer(id: string) { return pluginRegistry.getGoalCardRenderer(id); }
 export function getFormFieldExtensions() { return pluginRegistry.getFormFieldExtensions(); }
-export function getDetailBottomExtensions() { return pluginRegistry.getDetailBottomExtensions(); }
-export function getHeaderActionExtensions() { return pluginRegistry.getHeaderActionExtensions(); }
 export function getContentPanelExtensions() { return pluginRegistry.getContentPanelExtensions(); }
 export function getContentPanelExtension(id: string) { return pluginRegistry.getContentPanelExtension(id); }
-export function getProjectToolbarItems() { return pluginRegistry.getProjectToolbarItems(); }
 export function getRegistry() { return pluginRegistry.getRegistry(); }

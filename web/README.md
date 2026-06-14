@@ -59,15 +59,14 @@ web/
 | 扩展点 | 说明 |
 |--------|------|
 | `navigationMenuItems` | 主导航栏菜单项 |
-| `goalListRenderers` | 目标列表渲染器（可替换默认展示） |
-| `goalCardExtensions` | 目标卡片扩展内容 |
-| `sidebarPanelExtensions` | 项目详情侧边栏面板 |
+| `contentPanelExtensions` | 内容区面板扩展 |
+| `goalCardRenderers` | 目标卡片渲染器（可替换默认设计） |
 | `projectActionMenuItems` | 项目操作菜单项 |
 | `goalActionMenuItems` | 目标操作菜单项 |
 | `formFieldExtensions` | 表单字段扩展 |
-| `detailBottomExtensions` | 详情页底部扩展 |
-| `headerActionExtensions` | 页面头部操作区扩展 |
-| `contentPanelExtensions` | 内容区面板扩展 |
+
+注：
+表单字段扩展主要修改约束，前端显示不一定是描述约束，可以是目标本身
 
 ### 插件开发
 

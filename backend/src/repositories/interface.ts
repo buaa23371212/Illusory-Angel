@@ -85,6 +85,11 @@ export interface IConstraintRepository {
   findByOwner(ownerType: OwnerType, ownerId: number): Promise<Constraint[]>;
 
   /**
+   * 根据所有者类型获取所有约束（不限制ownerId）
+   */
+  findByOwnerType(ownerType: OwnerType): Promise<Constraint[]>;
+
+  /**
    * 根据ID查找约束
    */
   findById(id: number): Promise<Constraint | null>;

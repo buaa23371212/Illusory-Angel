@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { Plus, MoreVertical, CheckCircle2, Trash2 } from "lucide-react";
 
@@ -62,6 +63,9 @@ export const ProjectsNavigation: React.FC<ProjectsNavigationProps> = ({
   activeContentPanel,
   onContentPanelChange,
 }) => {
+  // 保留这些props引用以避免TypeScript错误
+  activeContentPanel;
+  onContentPanelChange;
   const totalProjects = projects.length;
 
   return (
@@ -232,7 +236,7 @@ export const ProjectsNavigation: React.FC<ProjectsNavigationProps> = ({
                              {Icon && <Icon className="mr-2 h-4 w-4" />}
                              {item.label}
                            </DropdownMenuItem>
-                           {item.separator && <DropdownMenu.Separator />}
+                           {item.separator && <DropdownMenuSeparator />}
                          </React.Fragment>
                        );
                      })}

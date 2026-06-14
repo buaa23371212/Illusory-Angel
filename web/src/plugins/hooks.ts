@@ -1,5 +1,6 @@
+import React from 'react';
 import { usePluginContext } from './PluginContext';
-import type { NavigationMenuItem, ContentPanelExtension } from './types';
+import type { NavigationMenuItem } from './types';
 import { pluginRegistry } from './registry';
 
 /**

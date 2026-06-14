@@ -18,57 +18,26 @@ export interface NavigationMenuItem {
 }
 
 /**
- * 目标列表展示组件接口
- * 插件可以注册自定义目标列表展示组件
+ * 目标卡片渲染器接口
+ * 插件可以注册自定义目标卡片渲染，替换单个目标卡片的设计
+ * 列表框架保持默认，只替换单个卡片的渲染
  */
-export interface GoalListRenderer {
+export interface GoalCardRenderer {
   /** 渲染器唯一标识 */
   id: string;
   /** 渲染器名称 */
   name: string;
-  /** 渲染器组件 */
-  component: React.ComponentType<{
-    /** 当前选中的项目 */
-    selectedProject: any;
-    /** 目标变化回调 */
-    onGoalChange: () => void;
-  }>;
-}
-
-/**
- * 目标卡片扩展内容接口
- * 插件可以在目标卡片中插入额外内容
- */
-export interface GoalCardExtension {
-  /** 扩展唯一标识 */
-  id: string;
-  /** 扩展组件 */
+  /** 渲染器组件 - 接收单个目标数据，负责渲染单个卡片 */
   component: React.ComponentType<{
     /** 目标数据 */
     goal: any;
     /** 项目ID */
     projectId: number;
+    /** 目标切换完成状态回调 */
+    onToggleComplete: (goal: any) => void;
+    /** 删除目标回调 */
+    onDelete: (goalId: number) => void;
   }>;
-  /** 排序位置 */
-  order?: number;
-}
-
-/**
- * 项目详情侧边栏面板接口
- * 插件可以在项目详情侧边栏添加自定义面板
- */
-export interface SidebarPanelExtension {
-  /** 面板唯一标识 */
-  id: string;
-  /** 面板标题 */
-  title: string;
-  /** 面板组件 */
-  component: React.ComponentType<{
-    /** 当前选中的项目 */
-    selectedProject: any;
-  }>;
-  /** 排序位置 */
-  order?: number;
 }
 
 /**
@@ -123,39 +92,7 @@ export interface FormFieldExtension {
   order?: number;
 }
 
-/**
- * 详情页底部扩展接口
- * 插件可以在详情页底部添加自定义内容
- */
-export interface DetailBottomExtension {
-  /** 扩展唯一标识 */
-  id: string;
-  /** 扩展组件 */
-  component: React.ComponentType<{
-    /** 当前目标 */
-    goal: any;
-    /** 项目ID */
-    projectId: number;
-  }>;
-  /** 排序位置 */
-  order?: number;
-}
 
-/**
- * 页面头部操作区扩展接口
- * 插件可以在页面头部添加自定义操作按钮
- */
-export interface HeaderActionExtension {
-  /** 扩展唯一标识 */
-  id: string;
-  /** 按钮组件 */
-  component: React.ComponentType<{
-    /** 当前选中的项目 */
-    selectedProject: any;
-  }>;
-  /** 排序位置 */
-  order?: number;
-}
 
 /**
  * 内容区面板扩展接口
@@ -185,22 +122,14 @@ export interface ContentPanelExtension {
 export interface PluginRegistry {
   /** 导航栏菜单项 */
   navigationMenuItems: NavigationMenuItem[];
-  /** 目标列表渲染器 */
-  goalListRenderers: GoalListRenderer[];
-  /** 目标卡片扩展内容 */
-  goalCardExtensions: GoalCardExtension[];
-  /** 项目详情侧边栏面板 */
-  sidebarPanelExtensions: SidebarPanelExtension[];
+  /** 目标卡片渲染器 */
+  goalCardRenderers: GoalCardRenderer[];
   /** 项目操作菜单项 */
   projectActionMenuItems: ProjectActionMenuItem[];
   /** 目标操作菜单项 */
   goalActionMenuItems: GoalActionMenuItem[];
   /** 表单字段扩展 */
   formFieldExtensions: FormFieldExtension[];
-  /** 详情页底部扩展 */
-  detailBottomExtensions: DetailBottomExtension[];
-  /** 页面头部操作区扩展 */
-  headerActionExtensions: HeaderActionExtension[];
   /** 内容区面板扩展 */
   contentPanelExtensions: ContentPanelExtension[];
 }
@@ -226,13 +155,9 @@ export interface Plugin {
  */
 export const defaultRegistry: PluginRegistry = {
   navigationMenuItems: [],
-  goalListRenderers: [],
-  goalCardExtensions: [],
-  sidebarPanelExtensions: [],
+  goalCardRenderers: [],
   projectActionMenuItems: [],
   goalActionMenuItems: [],
   formFieldExtensions: [],
-  detailBottomExtensions: [],
-  headerActionExtensions: [],
   contentPanelExtensions: [],
 };
