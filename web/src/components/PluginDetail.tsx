@@ -1,6 +1,5 @@
 import React from "react";
 import { Card } from "./ui/card";
-import { Switch } from "./ui/switch";
 import { Badge } from "./ui/badge";
 import type { Plugin } from "../plugins/types";
 
@@ -10,10 +9,6 @@ import type { Plugin } from "../plugins/types";
 interface PluginDetailProps {
   /** 当前选中的插件 */
   plugin: Plugin | null;
-  /** 插件启用状态 */
-  enabled: boolean;
-  /** 启用状态切换回调 */
-  onToggleEnabled: (enabled: boolean) => void;
 }
 
 /**
@@ -22,8 +17,6 @@ interface PluginDetailProps {
  */
 export const PluginDetail: React.FC<PluginDetailProps> = ({
   plugin,
-  enabled,
-  onToggleEnabled,
 }) => {
   if (!plugin) {
     return (
@@ -45,8 +38,8 @@ export const PluginDetail: React.FC<PluginDetailProps> = ({
               <h2 className="text-2xl font-bold">{plugin.name}</h2>
               <p className="text-sm text-muted-foreground mt-1">ID: {plugin.id}</p>
             </div>
-            <Badge variant={enabled ? "default" : "secondary"}>
-              {enabled ? "已启用" : "已禁用"}
+            <Badge variant="default">
+              已启用
             </Badge>
           </div>
           {plugin.description && (
@@ -62,17 +55,6 @@ export const PluginDetail: React.FC<PluginDetailProps> = ({
           ) : (
             <p className="text-muted-foreground text-sm">未指定版本</p>
           )}
-        </div>
-
-        {/* 启用/禁用控制 */}
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={enabled}
-            onCheckedChange={onToggleEnabled}
-          />
-          <span className="text-sm text-muted-foreground">
-            {enabled ? "插件已启用，功能正常运行" : "插件已禁用，功能不会被加载"}
-          </span>
         </div>
       </Card>
     </main>

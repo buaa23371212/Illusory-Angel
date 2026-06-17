@@ -4,18 +4,25 @@
  */
 
 import { Router } from 'express';
+import { getPluginRoutes } from '../plugins/registry';
+// 导入插件入口，触发所有插件的自注册逻辑
+import '../plugins';
+
 import projectRoutes from './projects';
 import goalRoutes from './goals';
 import constraintRoutes from './constraints';
-import alarmRouter from '../plugins/alarm-clock/routes';
 
 const apiRouter = Router();
 
-// 挂载各模块路由
+// 挂载核心模块路由
 apiRouter.use('/projects', projectRoutes);
 apiRouter.use('/goals', goalRoutes);
 apiRouter.use('/', constraintRoutes);
-// 闹钟提醒插件路由
-apiRouter.use('/', alarmRouter);
+
+// 挂载所有插件路由（从注册表获取）
+const pluginRoutes = getPluginRoutes();
+pluginRoutes.forEach(router => {
+  apiRouter.use('/', router);
+});
 
 export { apiRouter };

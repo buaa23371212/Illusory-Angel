@@ -117,6 +117,29 @@ export interface ContentPanelExtension {
 }
 
 /**
+ * 全局组件接口
+ * 插件可以注册全局组件，这些组件会在应用根节点渲染
+ * 适合实现轮询、通知、全局监听等功能
+ */
+export interface GlobalComponent {
+  /** 全局组件唯一标识 */
+  id: string;
+  /** 全局组件，不需要接收props */
+  component: React.ComponentType;
+}
+
+/**
+ * API扩展接口
+ * 插件可以注册自定义API方法，供其他地方调用
+ */
+export interface ApiExtension {
+  /** API方法唯一标识，格式为: pluginId.methodName */
+  id: string;
+  /** API方法 */
+  method: (...args: any[]) => any;
+}
+
+/**
  * 插件注册表，包含所有扩展点的注册信息
  */
 export interface PluginRegistry {
@@ -132,6 +155,10 @@ export interface PluginRegistry {
   formFieldExtensions: FormFieldExtension[];
   /** 内容区面板扩展 */
   contentPanelExtensions: ContentPanelExtension[];
+  /** 全局组件 - 在应用根节点渲染 */
+  globalComponents: GlobalComponent[];
+  /** API扩展 - 插件注册的自定义API方法 */
+  apiExtensions: ApiExtension[];
 }
 
 /**
@@ -146,6 +173,8 @@ export interface Plugin {
   description?: string;
   /** 插件版本 */
   version?: string;
+  /** 插件提供的API扩展方法 */
+  apiExtensions?: ApiExtension[];
   /** 插件初始化函数 */
   initialize?: () => void;
 }
@@ -160,4 +189,6 @@ export const defaultRegistry: PluginRegistry = {
   goalActionMenuItems: [],
   formFieldExtensions: [],
   contentPanelExtensions: [],
+  globalComponents: [],
+  apiExtensions: [],
 };

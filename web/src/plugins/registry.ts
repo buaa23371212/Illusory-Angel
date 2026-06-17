@@ -6,6 +6,8 @@ import type {
   GoalActionMenuItem,
   FormFieldExtension,
   ContentPanelExtension,
+  GlobalComponent,
+  ApiExtension,
   Plugin,
 } from './types';
 import { defaultRegistry } from './types';
@@ -42,19 +44,17 @@ class PluginRegistrySingleton {
    */
   registerPlugin(plugin: Plugin): void {
     this.plugins.set(plugin.id, plugin);
+    
+    // 自动注册插件提供的API扩展
+    if (plugin.apiExtensions) {
+      plugin.apiExtensions.forEach(api => {
+        this.registerApiExtension(api);
+      });
+    }
+    
     if (plugin.initialize) {
       plugin.initialize();
     }
-  }
-
-  /**
-   * 注销一个插件
-   */
-  unregisterPlugin(pluginId: string): void {
-    this.plugins.delete(pluginId);
-    // 移除该插件注册的所有扩展点
-    // 需要保留其他插件的扩展点，所以这里不做清理
-    // 如果需要完全清理，使用者应该重新初始化
   }
 
   /**
@@ -67,14 +67,6 @@ class PluginRegistrySingleton {
       .concat([item]);
     // 按排序权值排序
     this.sortByOrder(this.registry.navigationMenuItems);
-  }
-
-  /**
-   * 注销导航栏菜单项
-   */
-  unregisterNavigationMenuItem(id: string): void {
-    this.registry.navigationMenuItems = this.registry.navigationMenuItems
-      .filter(item => item.id !== id);
   }
 
   /**
@@ -91,14 +83,6 @@ class PluginRegistrySingleton {
     this.registry.goalCardRenderers = this.registry.goalCardRenderers
       .filter(existing => existing.id !== renderer.id)
       .concat([renderer]);
-  }
-
-  /**
-   * 注销目标卡片渲染器
-   */
-  unregisterGoalCardRenderer(id: string): void {
-    this.registry.goalCardRenderers = this.registry.goalCardRenderers
-      .filter(renderer => renderer.id !== id);
   }
 
   /**
@@ -125,14 +109,6 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 注销项目操作菜单项
-   */
-  unregisterProjectActionMenuItem(id: string): void {
-    this.registry.projectActionMenuItems = this.registry.projectActionMenuItems
-      .filter(item => item.id !== id);
-  }
-
-  /**
    * 获取所有项目操作菜单项
    */
   getProjectActionMenuItems(): ProjectActionMenuItem[] {
@@ -146,14 +122,6 @@ class PluginRegistrySingleton {
     this.registry.goalActionMenuItems = this.registry.goalActionMenuItems
       .filter(existing => existing.id !== item.id)
       .concat([item]);
-  }
-
-  /**
-   * 注销目标操作菜单项
-   */
-  unregisterGoalActionMenuItem(id: string): void {
-    this.registry.goalActionMenuItems = this.registry.goalActionMenuItems
-      .filter(item => item.id !== id);
   }
 
   /**
@@ -174,14 +142,6 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 注销表单字段扩展
-   */
-  unregisterFormFieldExtension(id: string): void {
-    this.registry.formFieldExtensions = this.registry.formFieldExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
    * 获取所有表单字段扩展（已排序）
    */
   getFormFieldExtensions(): FormFieldExtension[] {
@@ -199,14 +159,6 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 注销内容区面板扩展
-   */
-  unregisterContentPanelExtension(id: string): void {
-    this.registry.contentPanelExtensions = this.registry.contentPanelExtensions
-      .filter(extension => extension.id !== id);
-  }
-
-  /**
    * 获取所有内容区面板扩展（已排序）
    */
   getContentPanelExtensions(): ContentPanelExtension[] {
@@ -221,11 +173,36 @@ class PluginRegistrySingleton {
   }
 
   /**
-   * 重置注册表到初始状态
+   * 注册全局组件
+   * 全局组件会在应用根节点渲染，适合轮询、全局通知等功能
    */
-  reset(): void {
-    this.registry = { ...defaultRegistry };
-    this.plugins.clear();
+  registerGlobalComponent(component: GlobalComponent): void {
+    this.registry.globalComponents = this.registry.globalComponents
+      .filter(existing => existing.id !== component.id)
+      .concat([component]);
+  }
+
+  /**
+   * 获取所有全局组件
+   */
+  getGlobalComponents(): GlobalComponent[] {
+    return [...this.registry.globalComponents];
+  }
+
+  /**
+   * 注册API扩展方法
+   */
+  registerApiExtension(extension: ApiExtension): void {
+    this.registry.apiExtensions = this.registry.apiExtensions
+      .filter(existing => existing.id !== extension.id)
+      .concat([extension]);
+  }
+
+  /**
+   * 获取所有API扩展方法
+   */
+  getApiExtensions(): ApiExtension[] {
+    return [...this.registry.apiExtensions];
   }
 
   /**
@@ -252,14 +229,8 @@ export const registerGoalActionMenuItem = (item: GoalActionMenuItem) => pluginRe
 export const registerGoalCardRenderer = (renderer: GoalCardRenderer) => pluginRegistry.registerGoalCardRenderer(renderer);
 export const registerFormFieldExtension = (extension: FormFieldExtension) => pluginRegistry.registerFormFieldExtension(extension);
 export const registerContentPanelExtension = (extension: ContentPanelExtension) => pluginRegistry.registerContentPanelExtension(extension);
-
-// 注销方法导出
-export const unregisterNavigationMenuItem = (id: string) => pluginRegistry.unregisterNavigationMenuItem(id);
-export const unregisterProjectActionMenuItem = (id: string) => pluginRegistry.unregisterProjectActionMenuItem(id);
-export const unregisterGoalActionMenuItem = (id: string) => pluginRegistry.unregisterGoalActionMenuItem(id);
-export const unregisterGoalCardRenderer = (id: string) => pluginRegistry.unregisterGoalCardRenderer(id);
-export const unregisterFormFieldExtension = (id: string) => pluginRegistry.unregisterFormFieldExtension(id);
-export const unregisterContentPanelExtension = (id: string) => pluginRegistry.unregisterContentPanelExtension(id);
+export const registerGlobalComponent = (component: GlobalComponent) => pluginRegistry.registerGlobalComponent(component);
+export const registerApiExtension = (extension: ApiExtension) => pluginRegistry.registerApiExtension(extension);
 
 // 获取方法导出
 export function getNavigationMenuItems() { return pluginRegistry.getNavigationMenuItems(); }
@@ -270,4 +241,6 @@ export function getGoalCardRenderer(id: string) { return pluginRegistry.getGoalC
 export function getFormFieldExtensions() { return pluginRegistry.getFormFieldExtensions(); }
 export function getContentPanelExtensions() { return pluginRegistry.getContentPanelExtensions(); }
 export function getContentPanelExtension(id: string) { return pluginRegistry.getContentPanelExtension(id); }
+export function getGlobalComponents() { return pluginRegistry.getGlobalComponents(); }
+export function getApiExtensions() { return pluginRegistry.getApiExtensions(); }
 export function getRegistry() { return pluginRegistry.getRegistry(); }

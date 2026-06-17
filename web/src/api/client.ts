@@ -45,7 +45,8 @@ export interface PaginationParams {
  * 封装所有后端 API 调用
  */
 export class ApiClient {
-  private client: AxiosInstance
+  /** axios实例，供插件扩展API使用 */
+  public client: AxiosInstance
 
   constructor(config: ApiClientConfig) {
     this.client = axios.create({
@@ -263,6 +264,16 @@ export class ApiClient {
       `/constraints/${ownerType}/${ownerId}`
     )
     return response.data.data!
+  }
+
+  /**
+   * 动态注册插件扩展的API方法
+   * @param id 方法ID
+   * @param method API方法函数
+   */
+  registerApiMethod(id: string, method: (...args: any[]) => Promise<any>): void {
+    // @ts-ignore - 动态添加方法
+    this[id] = method.bind(this);
   }
 }
 

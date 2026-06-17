@@ -17,10 +17,6 @@ interface ContentAreaProps {
   onGoalChange: () => void;
   /** 当前选中的插件（插件管理时使用） */
   selectedPlugin: Plugin | null;
-  /** 插件启用状态映射 */
-  pluginEnabled: Map<string, boolean>;
-  /** 插件启用状态切换回调 */
-  onTogglePluginEnabled: (pluginId: string, enabled: boolean) => void;
   /** 当前激活的内容面板ID（null显示默认目标列表） */
   activeContentPanel: string | null;
   /** 所有注册的内容区面板扩展 */
@@ -37,8 +33,6 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
   selectedProject,
   onGoalChange,
   selectedPlugin,
-  pluginEnabled,
-  onTogglePluginEnabled,
   activeContentPanel,
   contentPanels,
 }) => {
@@ -48,12 +42,6 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
       <main className="flex-1 overflow-y-auto">
         <PluginDetail
           plugin={selectedPlugin}
-          enabled={selectedPlugin ? pluginEnabled.get(selectedPlugin.id) ?? true : false}
-          onToggleEnabled={(enabled) => {
-            if (selectedPlugin) {
-              onTogglePluginEnabled(selectedPlugin.id, enabled);
-            }
-          }}
         />
       </main>
     );

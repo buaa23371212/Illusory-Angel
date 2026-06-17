@@ -1,4 +1,3 @@
-import React from 'react';
 import { usePluginContext } from './PluginContext';
 import type { NavigationMenuItem } from './types';
 import { pluginRegistry } from './registry';
@@ -42,24 +41,4 @@ export function usePluginRegistry() {
     refreshRegistry,
     pluginRegistry: pluginRegistry,
   };
-}
-
-/**
- * 注册导航菜单项（动态注册时使用）
- * 通常插件在初始化时调用此Hook注册菜单项
- */
-export function useRegisterNavigationMenuItem(
-  item: NavigationMenuItem
-): void {
-  const { refreshRegistry } = usePluginContext();
-  
-  React.useEffect(() => {
-    pluginRegistry.registerNavigationMenuItem(item);
-    refreshRegistry();
-    
-    return () => {
-      pluginRegistry.unregisterNavigationMenuItem(item.id);
-      refreshRegistry();
-    };
-  }, [item.id, refreshRegistry]);
 }

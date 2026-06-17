@@ -42,27 +42,11 @@ function AppContent() {
   const [activeContentPanel, setActiveContentPanel] = useState<string | null>(null);
   // 插件管理相关状态
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
-  const [pluginEnabled, setPluginEnabled] = useState<Map<string, boolean>>(new Map());
 
   // 获取插件扩展点数据
   const { getContentPanelExtensions, getProjectActionMenuItems } = usePlugins();
   const contentPanels: ContentPanelExtension[] = getContentPanelExtensions();
   const projectActionMenuItems: ProjectActionMenuItem[] = getProjectActionMenuItems();
-
-  /**
-   * 切换插件启用状态
-   */
-  const handleTogglePluginEnabled = (pluginId: string, enabled: boolean) => {
-    const newMap = new Map(pluginEnabled);
-    newMap.set(pluginId, enabled);
-    setPluginEnabled(newMap);
-    // TODO: 实际实现需要重新加载插件或重新注册扩展点
-    if (enabled) {
-      toast.success(`插件 "${pluginId}" 已启用`);
-    } else {
-      toast.info(`插件 "${pluginId}" 已禁用`);
-    }
-  };
 
   /**
    * 加载项目目标并计算进度
@@ -248,8 +232,6 @@ function AppContent() {
           <PluginsNavigation
             selectedPlugin={selectedPlugin}
             onPluginSelect={setSelectedPlugin}
-            pluginEnabled={pluginEnabled}
-            onToggleEnabled={handleTogglePluginEnabled}
           />
         )}
 
@@ -259,8 +241,6 @@ function AppContent() {
           selectedProject={selectedProject}
           onGoalChange={handleGoalChange}
           selectedPlugin={selectedPlugin}
-          pluginEnabled={pluginEnabled}
-          onTogglePluginEnabled={handleTogglePluginEnabled}
           activeContentPanel={activeContentPanel}
           contentPanels={contentPanels}
         />

@@ -20,11 +20,15 @@ export * from './hooks';
 // 导入并自动初始化所有启用的插件
 import { pluginRegistry } from './registry';
 import { statisticsPlugin } from './registered/statistics';
-import { priorityTagPlugin } from './registered/priority-tag';
+import { alarmClockPlugin } from './registered/alarm-clock';
+import { loadPluginApiExtensions } from '@/api/pluginApiLoader';
 
 // 注册启用的插件
 pluginRegistry.registerPlugin(statisticsPlugin);
-pluginRegistry.registerPlugin(priorityTagPlugin);
+pluginRegistry.registerPlugin(alarmClockPlugin);
 
-// 导出示例插件供参考
-export { statisticsPlugin, priorityTagPlugin };
+// 加载所有插件注册的API扩展到apiClient
+loadPluginApiExtensions();
+
+// 导出插件供参考
+export { statisticsPlugin, alarmClockPlugin };

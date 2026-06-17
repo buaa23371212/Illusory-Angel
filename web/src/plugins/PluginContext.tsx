@@ -41,6 +41,10 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PluginContext.Provider value={{ registry, refreshRegistry }}>
+      {/* 渲染所有注册的全局组件 */}
+      {registry.globalComponents.map(({ component: Component }, index) => (
+        <Component key={index} />
+      ))}
       {children}
     </PluginContext.Provider>
   );

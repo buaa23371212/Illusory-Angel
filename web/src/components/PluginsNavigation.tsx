@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import type { Plugin } from "../plugins/types";
 import { usePluginRegistry } from "../plugins/hooks";
-import { Switch } from "./ui/switch";
 import { cn } from "../lib/utils";
 
 /**
@@ -12,21 +11,15 @@ interface PluginsNavigationProps {
   selectedPlugin: Plugin | null;
   /** 插件选中回调 */
   onPluginSelect: (plugin: Plugin) => void;
-  /** 插件启用状态映射 */
-  pluginEnabled: Map<string, boolean>;
-  /** 切换插件启用状态回调 */
-  onToggleEnabled: (pluginId: string, enabled: boolean) => void;
 }
 
 /**
  * 插件导航组件
- * 中间区域显示已安装插件列表，支持选择插件和启用/禁用切换
+ * 中间区域显示已安装插件列表，支持选择插件
  */
 export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
   selectedPlugin,
   onPluginSelect,
-  pluginEnabled,
-  onToggleEnabled,
 }) => {
   const { pluginRegistry } = usePluginRegistry();
 
@@ -36,13 +29,6 @@ export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
   const plugins = useMemo(() => {
     return pluginRegistry.getPlugins();
   }, [pluginRegistry]);
-
-  /**
-   * 获取插件启用状态
-   */
-  const isEnabled = (pluginId: string): boolean => {
-    return pluginEnabled.get(pluginId) ?? true;
-  };
 
   return (
     <aside className="w-80 border-r bg-muted/30 flex flex-col overflow-hidden">
@@ -63,8 +49,7 @@ export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
                   "p-3 rounded-lg border cursor-pointer transition-colors",
                   selectedPlugin?.id === plugin.id
                     ? "bg-primary/10 border-primary"
-                    : "bg-background hover:bg-muted/50",
-                  !isEnabled(plugin.id) && "opacity-50"
+                    : "bg-background hover:bg-muted/50"
                 )}
                 onClick={() => onPluginSelect(plugin)}
               >
@@ -86,13 +71,6 @@ export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
                       </p>
                     )}
                   </div>
-                  <Switch
-                    checked={isEnabled(plugin.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    onCheckedChange={(checked) =>
-                      onToggleEnabled(plugin.id, checked)
-                    }
-                  />
                 </div>
               </div>
             ))}
