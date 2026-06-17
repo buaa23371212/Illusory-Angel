@@ -5,3 +5,4 @@
 
 // 导入启用的插件，这样会执行插件的自注册代码
 import './alarm-clock/routes';
+import './bqtj/routes';

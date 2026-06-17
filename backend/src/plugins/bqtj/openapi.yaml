@@ -1,0 +1,130 @@
+openapi: 3.0.0
+info:
+  title: 爆枪英雄养成插件 API
+  description: 爆枪英雄养成计划插件，管理资源掉落限制和背包资源
+  version: 1.0.0
+
+paths:
+  /api/v1/projects/{projectId}/plugins/bqtj:
+    get:
+      summary: 获取项目下所有养成约束数据
+      description: 一次性返回项目下所有养成约束数据（每日掉落限制、每周掉落限制、背包已有资源）
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+      responses:
+        200:
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      dailyDropLimit:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resourceId:
+                              type: string
+                              example: "argon_star_wasp"
+                            resourceName:
+                              type: string
+                              example: "氩星青蜂"
+                            limit:
+                              type: integer
+                              example: 3
+                            current:
+                              type: integer
+                              example: 1
+                            resetAt:
+                              type: integer
+                              example: 1735689600000
+                      weeklyDropLimit:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resourceId:
+                              type: string
+                            resourceName:
+                              type: string
+                            limit:
+                              type: integer
+                            current:
+                              type: integer
+                            resetAt:
+                              type: integer
+                      inventoryResources:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resourceId:
+                              type: string
+                            resourceName:
+                              type: string
+                            quantity:
+                              type: integer
+
+  /api/v1/projects/{projectId}/plugins/bqtj/constraint/{constraintName}:
+    post:
+      summary: 更新指定约束的 params 数据
+      description: 根据约束名称更新对应约束的 params 数据
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 项目ID
+        - name: constraintName
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [daily_drop_limit, weekly_drop_limit, inventory_resources, goal_attributes]
+          description: 约束名称
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                params:
+                  type: object
+                  description: 完整的 params JSON 对象
+              required:
+                - params
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+        400:
+          description: 参数错误
+        404:
+          description: 项目不存在

@@ -1,191 +1,199 @@
 /**
  * 闹钟提醒插件测试
  * 测试流程：
- * 1. 获取所有项目
- * 2. 随机选择一个项目
- * 3. 获取该项目的所有目标
- * 4. 随机选择一个目标
- * 5. 给该目标添加闹钟配置
- * 6. 获取闹钟配置验证结果
+ * 1. 检查服务器健康状态
+ * 2. 创建测试项目
+ * 3. 创建测试目标
+ * 4. 给该目标添加闹钟配置
+ * 5. 获取闹钟配置验证结果
+ * 6. 测试获取待触发闹钟列表
+ * 7. 测试边界情况（不存在的闹钟、无效格式）
  */
 
-import dotenv from 'dotenv';
-dotenv.config();
-
-import request from 'supertest';
-import app from '../src/index';
+import axios from 'axios';
 
 /**
- * 项目接口定义（API返回为蛇形命名）
+ * API基础URL
  */
-interface Project {
-  project_id: number;
-  name: string;
-  description?: string;
-}
+const API_BASE = 'http://localhost:3000/api/v1';
 
 /**
- * 目标接口定义（API返回为蛇形命名）
+ * 测试主函数
  */
-interface Goal {
-  goal_id: number;
-  name: string;
-  description?: string;
-  project_id: number;
-}
+async function runTest(): Promise<void> {
+  console.log('🧪 开始测试：闹钟提醒插件完整流程');
+  console.log('='.repeat(60));
 
-/**
- * 随机选择数组中的一个元素
- * @param array 输入数组
- * @returns 随机选中的元素
- */
-function getRandomItem<T>(array: T[]): T {
-  const randomIndex = Math.floor(Math.random() * array.length);
-  return array[randomIndex];
-}
+  try {
+    // 步骤1：检查服务器是否运行
+    console.log('\n📋 步骤1：检查服务器健康状态');
+    await axios.get('http://localhost:3000/health');
+    console.log('✅ 服务器正常运行');
 
-describe('Alarm Clock Plugin E2E Test', () => {
-  it('should complete the full flow: get projects -> select project -> get goals -> select goal -> add alarm -> verify', async () => {
-    console.log('='.repeat(60));
-    console.log('Starting Alarm Clock Plugin E2E Test');
-    console.log('='.repeat(60));
-
-    // 步骤1: 获取所有项目
-    console.log('\n1. Getting all projects...');
-    const projectsResponse = await request(app).get('/api/v1/projects');
-    
-    expect(projectsResponse.status).toBe(200);
-    expect(projectsResponse.body.success).toBe(true);
-    
-    const projects = projectsResponse.body.data.list;
-    expect(Array.isArray(projects)).toBe(true);
-    expect(projects.length).toBeGreaterThan(0);
-    
-    console.log(`   Found ${projects.length} projects`);
-
-    // 步骤2: 随机选择一个项目
-    const selectedProject: Project = getRandomItem(projects);
-    console.log(`\n2. Randomly selected project: ${selectedProject.name} (ID: ${selectedProject.project_id})`);
-
-    // 步骤3: 获取该项目的所有目标
-    console.log(`\n3. Getting all goals for project ID: ${selectedProject.project_id}...`);
-    const goalsResponse = await request(app)
-      .get('/api/v1/goals')
-      .query({ project_id: selectedProject.project_id });
-    
-    expect(goalsResponse.status).toBe(200);
-    expect(goalsResponse.body.success).toBe(true);
-    
-    const goals = goalsResponse.body.data.list;
-    expect(Array.isArray(goals)).toBe(true);
-    
-    if (goals.length === 0) {
-      console.log('   ⚠️ No goals found in this project, test skipped');
-      return;
+    // 步骤2：创建项目
+    console.log('\n📋 步骤2：创建测试项目');
+    const projectData = {
+      name: '闹钟测试项目',
+      description: '用于测试闹钟提醒插件'
+    };
+    const projectResponse = await axios.post(`${API_BASE}/projects`, projectData);
+    if (!projectResponse.data.success) {
+      throw new Error(`创建项目失败: ${projectResponse.data.error}`);
     }
-    
-    console.log(`   Found ${goals.length} goals`);
+    const project = projectResponse.data.data;
+    console.log(`✅ 项目创建成功，ID: ${project.projectId}, 名称: "${project.name}"`);
 
-    // 步骤4: 随机选择一个目标
-    const selectedGoal: Goal = getRandomItem(goals);
-    console.log(`\n4. Randomly selected goal: ${selectedGoal.name} (ID: ${selectedGoal.goal_id})`);
+    // 步骤3：创建目标
+    console.log('\n📋 步骤3：创建测试目标');
+    const goalData = {
+      name: '完成每周任务',
+      description: '提醒我每周完成这个任务'
+    };
+    const goalResponse = await axios.post(`${API_BASE}/goals/projects/${project.projectId}/goals`, goalData);
+    if (!goalResponse.data.success) {
+      throw new Error(`创建目标失败: ${goalResponse.data.error}`);
+    }
+    const goal = goalResponse.data.data;
+    console.log(`✅ 目标创建成功，ID: ${goal.goalId}, 名称: "${goal.name}"`);
 
-    // 步骤5: 给该目标添加闹钟配置
-    console.log(`\n5. Adding alarm configuration to goal ID: ${selectedGoal.goal_id}...`);
+    // 步骤4：添加闹钟配置
+    console.log('\n📋 步骤4：添加闹钟配置');
     const alarmConfig = {
       enabled: true,
       time: '09:00',
       days: [1, 2, 3, 4, 5], // 周一到周五
-      message: `提醒：需要完成 "${selectedGoal.name}"！`
+      message: `提醒：需要完成 "${goal.name}"！`
     };
-    
-    const saveResponse = await request(app)
-      .post(`/api/v1/goals/${selectedGoal.goal_id}/alarm`)
-      .send(alarmConfig);
-    
-    expect(saveResponse.status).toBe(200);
-    expect(saveResponse.body.success).toBe(true);
-    
-    console.log(`   ✓ Alarm saved successfully`);
+    const saveResponse = await axios.post(
+      `${API_BASE}/goals/${goal.goalId}/alarm`,
+      alarmConfig
+    );
+    if (!saveResponse.data.success) {
+      throw new Error(`保存闹钟配置失败: ${saveResponse.data.error}`);
+    }
+    console.log(`✅ 闹钟配置保存成功`);
     console.log(`   Config: enabled=${alarmConfig.enabled}, time=${alarmConfig.time}, days=[${alarmConfig.days.join(',')}]`);
     console.log(`   Message: ${alarmConfig.message}`);
 
-    // 步骤6: 获取闹钟配置验证结果
-    console.log(`\n6. Verifying alarm configuration...`);
-    const getResponse = await request(app)
-      .get(`/api/v1/goals/${selectedGoal.goal_id}/alarm`);
-    
-    expect(getResponse.status).toBe(200);
-    expect(getResponse.body.success).toBe(true);
-    
-    const savedConfig = getResponse.body.data;
-    expect(savedConfig.enabled).toBe(alarmConfig.enabled);
-    expect(savedConfig.time).toBe(alarmConfig.time);
-    expect(savedConfig.days).toEqual(expect.arrayContaining(alarmConfig.days));
-    expect(savedConfig.message).toBe(alarmConfig.message);
-    
-    console.log(`   ✓ Alarm configuration verified successfully`);
-    console.log(`   Retrieved config matches saved config`);
+    // 步骤5：验证闹钟配置
+    console.log('\n📋 步骤5：验证闹钟配置是否正确保存');
+    const getResponse = await axios.get(`${API_BASE}/goals/${goal.goalId}/alarm`);
+    if (!getResponse.data.success) {
+      throw new Error(`获取闹钟配置失败: ${getResponse.data.error}`);
+    }
+    const savedConfig = getResponse.data.data;
+    if (savedConfig.enabled !== alarmConfig.enabled) {
+      throw new Error(`验证失败：enabled不匹配，预期 ${alarmConfig.enabled}，实际 ${savedConfig.enabled}`);
+    }
+    if (savedConfig.time !== alarmConfig.time) {
+      throw new Error(`验证失败：time不匹配，预期 ${alarmConfig.time}，实际 ${savedConfig.time}`);
+    }
+    if (JSON.stringify(savedConfig.days.sort()) !== JSON.stringify(alarmConfig.days.sort())) {
+      throw new Error(`验证失败：days不匹配，预期 [${alarmConfig.days}]，实际 [${savedConfig.days}]`);
+    }
+    if (savedConfig.message !== alarmConfig.message) {
+      throw new Error(`验证失败：message不匹配，预期 "${alarmConfig.message}"，实际 "${savedConfig.message}"`);
+    }
+    console.log('✅ 闹钟配置验证成功，保存的数据与输入一致');
 
-    // 步骤7: 测试获取待触发闹钟列表
-    console.log(`\n7. Testing get due alarms endpoint...`);
-    const dueAlarmsResponse = await request(app)
-      .get('/api/v1/alarm/due');
-    
-    expect(dueAlarmsResponse.status).toBe(200);
-    expect(dueAlarmsResponse.body.success).toBe(true);
-    expect(Array.isArray(dueAlarmsResponse.body.data)).toBe(true);
-    
-    console.log(`   ✓ Due alarms endpoint works`);
-    console.log(`   Found ${dueAlarmsResponse.body.data.length} due alarm(s) currently`);
+    // 步骤6：测试获取待触发闹钟列表
+    console.log('\n📋 步骤6：测试获取待触发闹钟列表接口');
+    const dueAlarmsResponse = await axios.get(`${API_BASE}/alarm/due`);
+    if (!dueAlarmsResponse.data.success) {
+      throw new Error(`获取待触发闹钟失败: ${dueAlarmsResponse.data.error}`);
+    }
+    if (!Array.isArray(dueAlarmsResponse.data.data)) {
+      throw new Error('验证失败：返回数据不是数组');
+    }
+    console.log(`✅ 待触发闹钟接口工作正常`);
+    console.log(`   当前找到 ${dueAlarmsResponse.data.data.length} 个待触发闹钟`);
 
-    console.log('\n' + '='.repeat(60));
-    console.log('✅ Alarm Clock Plugin E2E Test Completed Successfully!');
-    console.log('='.repeat(60));
-  }, 30000); // 超时设置30秒
-
-  it('should return 404 when alarm does not exist', async () => {
-    // 测试获取不存在的闹钟配置应该返回 null
+    // 步骤7：测试边界情况 - 获取不存在的闹钟
+    console.log('\n📋 步骤7：测试边界情况 - 获取不存在的闹钟配置');
     const nonExistentGoalId = 999999;
-    const response = await request(app)
-      .get(`/api/v1/goals/${nonExistentGoalId}/alarm`);
-    
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data).toBeNull();
-  });
+    const notFoundResponse = await axios.get(`${API_BASE}/goals/${nonExistentGoalId}/alarm`);
+    if (!notFoundResponse.data.success) {
+      throw new Error(`验证失败：获取不存在闹钟应该返回 success，但返回错误: ${notFoundResponse.data.error}`);
+    }
+    if (notFoundResponse.data.data !== null) {
+      throw new Error('验证失败：不存在的闹钟应该返回 null');
+    }
+    console.log('✅ 边界情况验证通过：不存在的闹钟返回 null');
 
-  it('should validate invalid time format', async () => {
-    // 测试验证错误的时间格式
-    const invalidConfig = {
+    // 步骤8：测试参数验证 - 无效时间格式
+    console.log('\n📋 步骤8：测试参数验证 - 无效时间格式');
+    const invalidTimeConfig = {
       enabled: true,
       time: '25:70', // 无效时间
       days: [1, 2, 3],
       message: 'Test invalid time'
     };
+    try {
+      await axios.post(
+        `${API_BASE}/goals/${goal.goalId}/alarm`,
+        invalidTimeConfig
+      );
+      throw new Error('验证失败：无效时间格式应该被拒绝，但请求成功了');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status !== 400 || error.response.data.success !== false) {
+          throw new Error(`验证失败：无效时间格式应该返回 400 和 success=false，实际状态码: ${error.response.status}, success: ${error.response.data.success}`);
+        }
+        console.log(`✅ 参数验证通过：无效时间格式被正确拒绝，状态码: ${error.response.status}`);
+      } else {
+        throw error;
+      }
+    }
 
-    const response = await request(app)
-      .post('/api/v1/goals/1/alarm')
-      .send(invalidConfig);
-    
-    expect(response.status).toBe(400);
-    expect(response.body.success).toBe(false);
-  });
-
-  it('should validate invalid days format', async () => {
-    // 测试验证错误的星期格式
-    const invalidConfig = {
+    // 步骤9：测试参数验证 - 无效星期格式
+    console.log('\n📋 步骤9：测试参数验证 - 无效星期格式');
+    const invalidDaysConfig = {
       enabled: true,
       time: '10:00',
-      days: [0, 1, 7], // 7 超出范围
+      days: [0, 1, 7], // 0 和 7 超出范围
       message: 'Test invalid days'
     };
+    try {
+      await axios.post(
+        `${API_BASE}/goals/${goal.goalId}/alarm`,
+        invalidDaysConfig
+      );
+      throw new Error('验证失败：无效星期格式应该被拒绝，但请求成功了');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status !== 400 || error.response.data.success !== false) {
+          throw new Error(`验证失败：无效星期格式应该返回 400 和 success=false，实际状态码: ${error.response.status}, success: ${error.response.data.success}`);
+        }
+        console.log(`✅ 参数验证通过：无效星期格式被正确拒绝，状态码: ${error.response.status}`);
+      } else {
+        throw error;
+      }
+    }
 
-    const response = await request(app)
-      .post('/api/v1/goals/1/alarm')
-      .send(invalidConfig);
-    
-    expect(response.status).toBe(400);
-    expect(response.body.success).toBe(false);
-  });
-});
+    console.log('\n' + '='.repeat(60));
+    console.log('🎉 所有测试通过！闹钟提醒插件功能验证成功');
+    console.log(`   创建的项目ID: ${project.projectId}`);
+    console.log(`   创建的目标ID: ${goal.goalId}`);
+
+  } catch (error) {
+    console.error('\n❌ 测试失败');
+    if (axios.isAxiosError(error)) {
+      console.error('请求信息:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+    } else {
+      console.error('错误信息:', (error as Error).message);
+    }
+    process.exit(1);
+  }
+}
+
+// 如果直接运行则执行测试
+if (require.main === module) {
+  runTest();
+}
+
+export default runTest;
