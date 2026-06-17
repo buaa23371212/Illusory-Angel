@@ -11,8 +11,8 @@ import { apiClient } from '@/api/client';
  * @param goalId 目标ID
  */
 export async function getAlarmConfig(goalId: number): Promise<AlarmConfig | null> {
-  const response = await apiClient.client.get<AlarmConfig | null>(`/api/alarm/config/${goalId}`);
-  return response.data;
+  const response = await apiClient.client.get<{ success: boolean; data: AlarmConfig | null }>(`/goals/${goalId}/alarm`);
+  return response.data.data;
 }
 
 /**
@@ -21,8 +21,8 @@ export async function getAlarmConfig(goalId: number): Promise<AlarmConfig | null
  * @param data 闹钟配置数据
  */
 export async function saveAlarmConfig(goalId: number, data: SaveAlarmRequest): Promise<AlarmConfig> {
-  const response = await apiClient.client.put<AlarmConfig>(`/api/alarm/config/${goalId}`, data);
-  return response.data;
+  const response = await apiClient.client.post<{ success: boolean; data: AlarmConfig }>(`/goals/${goalId}/alarm`, data);
+  return response.data.data;
 }
 
 /**
@@ -30,8 +30,8 @@ export async function saveAlarmConfig(goalId: number, data: SaveAlarmRequest): P
  * @param goalId 目标ID
  */
 export async function deleteAlarmConfig(goalId: number): Promise<{ success: boolean }> {
-  const response = await apiClient.client.delete<{ success: boolean }>(`/api/alarm/config/${goalId}`);
-  return response.data;
+  const response = await apiClient.client.delete<{ success: boolean; data: { success: boolean } }>(`/goals/${goalId}/alarm`);
+  return response.data.data;
 }
 
 /**
@@ -39,6 +39,6 @@ export async function deleteAlarmConfig(goalId: number): Promise<{ success: bool
  * 由前端轮询调用，检查是否有需要触发的闹钟
  */
 export async function getDueAlarms(): Promise<DueAlarm[]> {
-  const response = await apiClient.client.get<DueAlarm[]>(`/api/alarm/due`);
-  return response.data;
+  const response = await apiClient.client.get<{ success: boolean; data: DueAlarm[] }>(`/alarm/due`);
+  return response.data.data;
 }

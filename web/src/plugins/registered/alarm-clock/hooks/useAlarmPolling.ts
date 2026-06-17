@@ -18,13 +18,19 @@ interface UseAlarmPollingOptions {
 }
 
 /**
+ * 从环境变量读取默认轮询间隔，单位毫秒
+ * 如果环境变量未设置，默认1分钟
+ */
+const DEFAULT_INTERVAL = parseInt(import.meta.env.VITE_ALARM_POLLING_INTERVAL || '60000', 10);
+
+/**
  * 闹钟轮询Hook
  * 定时检查后端，获取待触发的闹钟列表
  * @param options 配置选项
  * @returns 待触发闹钟列表和检查函数
  */
 export function useAlarmPolling({
-  interval = 60 * 1000, // 默认1分钟
+  interval = DEFAULT_INTERVAL,
   enabled = true,
 }: UseAlarmPollingOptions = {}) {
   const [dueAlarms, setDueAlarms] = useState<DueAlarm[]>([]);
