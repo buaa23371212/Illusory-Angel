@@ -57,7 +57,6 @@ export function ProjectCard({ project, onDelete, onUpdate }: ProjectCardProps) {
         project_id: project.project_id,
         name: newGoalTitle.trim(),
         description: '',
-        priority: 3,
       })
       setGoals([...goals, newGoal])
       setNewGoalTitle('')

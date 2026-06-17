@@ -45,8 +45,6 @@ model Goal {
   name          String     @db.VarChar(255)
   /// 目标描述
   description   String?    @db.Text
-  /// 优先级: 1-最高, 2-高, 3-中, 4-低, 5-最低
-  priority      Int        @default(3) @db.UnsignedTinyInt
   /// 创建时间
   createdAt     DateTime   @default(now()) @db.DateTime(0)
   /// 更新时间
@@ -61,7 +59,6 @@ model Goal {
 
   /// 索引优化查询
   @@index([projectId])
-  @@index([priority])
   @@index([isCompleted])
 
   @@map("goals")

@@ -41,8 +41,7 @@ async function runTest(): Promise<void> {
     console.log('\n📋 步骤3：创建测试目标');
     const goalData = {
       name: '测试目标',
-      // description: '这是一个需要完成的测试目标',
-      // priority: 1
+      // description: '这是一个需要完成的测试目标'
     };
     const goalResponse = await axios.post(`${API_BASE}/goals/projects/${project.projectId}/goals`, goalData);
     if (!goalResponse.data.success) {

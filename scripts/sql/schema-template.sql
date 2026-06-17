@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS goals (
     project_id INT UNSIGNED NOT NULL COMMENT '所属项目ID',
     name VARCHAR(255) NOT NULL COMMENT '目标名称',
     description TEXT DEFAULT NULL COMMENT '目标描述',
-    priority TINYINT UNSIGNED NOT NULL DEFAULT 3 COMMENT '优先级: 1-最高, 2-高, 3-中, 4-低, 5-最低',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     is_completed TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否完成: 0-未完成, 1-已完成',
@@ -50,7 +49,6 @@ CREATE TABLE IF NOT EXISTS goals (
 
 -- 索引优化查询
 CREATE INDEX idx_project_id ON goals(project_id);
-CREATE INDEX idx_priority ON goals(priority);
 CREATE INDEX idx_is_completed ON goals(is_completed);
 
 -- ============================================

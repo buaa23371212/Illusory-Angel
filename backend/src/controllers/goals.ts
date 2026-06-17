@@ -22,8 +22,6 @@ export async function getGoalsByProject(req: Request, res: Response) {
     }
     const repo = await getRepository();
     const goals = await repo.goal.findByProjectId(parseInt(project_id as string));
-    // 按优先级升序排序（数字越小优先级越高）
-    goals.sort((a, b) => a.priority - b.priority);
     
     // 遵循OpenAPI规范返回分页格式
     const responseData = {
@@ -63,12 +61,12 @@ export async function getGoalById(req: Request, res: Response) {
 
 /**
  * 创建新目标
- * @param req Express请求对象，body包含project_id, name, description, priority
+ * @param req Express请求对象，body包含project_id, name, description
  * @param res Express响应对象
  */
 export async function createGoal(req: Request, res: Response) {
   try {
-    const { project_id, name, description, priority = 3 } = req.body;
+    const { project_id, name, description } = req.body;
 
     if (!project_id || typeof project_id !== 'number') {
       error(res, 'Valid project_id is required in request body', 400);
@@ -85,7 +83,6 @@ export async function createGoal(req: Request, res: Response) {
       projectId: project_id,
       name: name.trim(),
       description: description?.trim() || null,
-      priority: Number(priority) || 3,
       isCompleted: false
     });
 
@@ -104,7 +101,7 @@ export async function createGoal(req: Request, res: Response) {
 export async function updateGoal(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { name, description, priority, isCompleted } = req.body;
+    const { name, description, isCompleted } = req.body;
     const goalId = parseInt(id as string);
 
     const repo = await getRepository();
@@ -118,7 +115,6 @@ export async function updateGoal(req: Request, res: Response) {
     const updateData: any = {};
     if (name !== undefined) updateData.name = name.trim();
     if (description !== undefined) updateData.description = description?.trim() || null;
-    if (priority !== undefined) updateData.priority = Number(priority);
     if (isCompleted !== undefined) updateData.isCompleted = Boolean(isCompleted);
 
     const goal = await repo.goal.update(goalId, updateData);

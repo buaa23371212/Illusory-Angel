@@ -73,7 +73,6 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
         project_id: selectedProject.project_id,
         name: newGoalTitle.trim(),
         description: newGoalDescription.trim() || null,
-        priority: 3,
       })
       setGoals([...goals, newGoal])
       setNewGoalTitle('')

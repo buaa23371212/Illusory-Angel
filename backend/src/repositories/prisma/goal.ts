@@ -22,7 +22,7 @@ export class GoalPrismaRepository implements IGoalRepository {
   async findByProjectId(projectId: number): Promise<Goal[]> {
     return this.prisma.goal.findMany({
       where: { projectId, isDeleted: false },
-      orderBy: { priority: 'asc' }
+      orderBy: { createdAt: 'asc' }
     });
   }
 

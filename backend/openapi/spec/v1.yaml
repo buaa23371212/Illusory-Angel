@@ -552,11 +552,6 @@ components:
           type: string
           nullable: true
           description: 目标描述
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 5
-          description: 优先级 1-最高 5-最低
         is_completed:
           type: integer
           enum: [0, 1]
@@ -577,7 +572,6 @@ components:
         - goal_id
         - project_id
         - name
-        - priority
         - created_at
         - updated_at
 
@@ -594,12 +588,6 @@ components:
           type: string
           nullable: true
           description: 目标描述
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 5
-          default: 3
-          description: 优先级 1-5
       required:
         - project_id
         - name
@@ -614,11 +602,6 @@ components:
           type: string
           nullable: true
           description: 目标描述
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 5
-          description: 优先级 1-5
 
     GoalResponse:
       type: object

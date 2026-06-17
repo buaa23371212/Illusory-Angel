@@ -772,8 +772,6 @@ export interface components {
             name: string;
             /** @description 目标描述 */
             description?: string | null;
-            /** @description 优先级 1-最高 5-最低 */
-            priority: number;
             /**
              * @description 是否完成
              * @enum {integer}
@@ -802,19 +800,12 @@ export interface components {
             name: string;
             /** @description 目标描述 */
             description?: string | null;
-            /**
-             * @description 优先级 1-5
-             * @default 3
-             */
-            priority: number;
         };
         UpdateGoalRequest: {
             /** @description 目标名称 */
             name?: string;
             /** @description 目标描述 */
             description?: string | null;
-            /** @description 优先级 1-5 */
-            priority?: number;
         };
         GoalResponse: {
             success?: boolean;
