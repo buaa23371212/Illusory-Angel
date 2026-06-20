@@ -3,22 +3,14 @@ import { apiClient } from '../api/client'
 import type { Project, Goal } from '../api/client'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
-import { Checkbox } from './ui/checkbox'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import { Badge } from './ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from './ui/dropdown-menu'
-import { Trash2, Plus, Target, MoreVertical } from 'lucide-react'
+import { Plus, Target, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePluginRegistry } from '../plugins/hooks'
-import { getGoalActionMenuItems } from '../plugins/registry'
-import type { GoalActionMenuItem } from '../plugins/types'
+import { GoalCard } from './GoalCard'
 
 /**
  * 目标列表组件属性
@@ -39,6 +31,15 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [newGoalDescription, setNewGoalDescription] = useState('')
+
+  // 查看目标详情对话框状态
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [detailGoal, setDetailGoal] = useState<Goal | null>(null)
+  const [detailConstraints, setDetailConstraints] = useState<any[]>([])
+  // 详情对话框编辑模式状态
+  const [isDetailEditing, setIsDetailEditing] = useState(false)
+  const [detailEditTitle, setDetailEditTitle] = useState('')
+  const [detailEditDescription, setDetailEditDescription] = useState('')
 
   /**
    * 加载目标列表
@@ -115,11 +116,60 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
     }
   }
 
+  /**
+   * 打开查看目标详情对话框
+   * 加载目标详情（包含约束）并初始化编辑状态
+   */
+  /**
+   * 查看目标详情
+   */
+  const handleViewDetail = async (goal: Goal) => {
+    setDetailGoal(goal);
+    setDetailEditTitle(goal.name);
+    setDetailEditDescription(goal.description || '');
+    setIsDetailEditing(false);
+    setDetailDialogOpen(true);
+  };
+
+  /**
+   * 保存详情对话框中的编辑
+   * 同时更新基本信息和优先级约束
+   */
+  /**
+   * 保存目标详情编辑
+   */
+  const handleSaveDetailEdit = async () => {
+    if (!detailGoal) return;
+    try {
+      // 更新目标基本信息
+      await apiClient.updateGoal(detailGoal.goal_id, {
+        name: detailEditTitle.trim(),
+        description: detailEditDescription.trim() || null
+      });
+
+      // 重新加载目标列表
+      loadGoals();
+      // 更新详情目标数据
+      setDetailGoal({
+        ...detailGoal,
+        name: detailEditTitle.trim(),
+        description: detailEditDescription.trim() || null
+      });
+      setIsDetailEditing(false);
+      toast.success('目标更新成功');
+    } catch (err) {
+      console.error('更新目标失败:', err);
+      toast.error('更新目标失败');
+    }
+  };
+
+
+
   // 获取插件注册表中的目标卡片渲染器
   const { pluginRegistry } = usePluginRegistry();
   const goalCardRenderers = pluginRegistry.getGoalCardRenderers();
-  // 获取所有注册的目标操作菜单项
-  const goalActionMenuItems: GoalActionMenuItem[] = getGoalActionMenuItems();
+  // 获取所有注册的表单字段扩展
+  const formFieldExtensions = pluginRegistry.getFormFieldExtensions();
 
   // 如果有自定义目标卡片渲染器，使用第一个注册的渲染器替换单个卡片设计
   // TODO: 未来可以支持用户选择使用哪个渲染器
@@ -206,71 +256,16 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
                   />
                 );
               }
-              // 使用默认卡片设计
+              // 使用默认卡片组件
               return (
-                <Card key={goal.goal_id} className="transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={goal.is_completed === 1}
-                        onCheckedChange={() => handleToggleGoal(goal)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-base break-words ${
-                            goal.is_completed === 1 ? 'line-through text-muted-foreground' : 'font-medium'
-                          }`}
-                        >
-                          {goal.name}
-                        </p>
-                        {goal.description && (
-                          <p className="text-sm text-muted-foreground break-words mt-1">
-                            {goal.description}
-                          </p>
-                        )}
-                      </div>
-                      {/* 目标操作折叠工具栏 */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-muted-foreground"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {/* 渲染插件注册的自定义目标操作菜单项 */}
-                          {goalActionMenuItems.map((item) => (
-                            <DropdownMenuItem
-                              key={item.id}
-                              onClick={() => {
-                                if (selectedProject) {
-                                  item.onClick(goal, selectedProject.project_id);
-                                }
-                              }}
-                            >
-                              {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                              {item.label}
-                            </DropdownMenuItem>
-                          ))}
-                          {/* 如果有自定义菜单项且有删除选项，添加分隔线 */}
-                          {goalActionMenuItems.length > 0 && <DropdownMenuSeparator />}
-                          {/* 默认删除操作 */}
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteGoal(goal.goal_id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                </Card>
+                <GoalCard
+                  key={goal.goal_id}
+                  goal={goal}
+                  projectId={selectedProject.project_id}
+                  onToggleComplete={handleToggleGoal}
+                  onDelete={handleDeleteGoal}
+                  onViewDetail={handleViewDetail}
+                />
               );
             })}
           </div>
@@ -302,12 +297,160 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
                 onChange={(e) => setNewGoalDescription(e.target.value)}
               />
             </div>
+            {/* 渲染插件注册的表单字段扩展 */}
+            {formFieldExtensions.sort((a: any, b: any) => a.order - b.order).map((extension: any) => {
+              const ExtensionComponent = extension.component;
+              // TODO: 目前只支持创建目标，扩展字段由插件通过约束表存储
+              const extensionValues = {};
+              const handleExtensionChange = (_field: string, _value: any) => {
+                // 扩展字段由插件自行管理，后续统一保存
+              };
+              return (
+                <div key={extension.id} className="plugin-form-field-extension">
+                  <ExtensionComponent
+                    values={extensionValues}
+                    onChange={handleExtensionChange}
+                  />
+                </div>
+              );
+            })}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
               取消
             </Button>
             <Button onClick={handleAddGoal}>添加</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 查看/编辑目标详情对话框 */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isDetailEditing ? '编辑目标' : '目标详情'}</DialogTitle>
+          </DialogHeader>
+          {detailGoal && (
+            <div className="space-y-4 py-4">
+              {/* 基本信息 */}
+              {isDetailEditing ? (
+                // 编辑模式
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="detail-edit-title">目标名称</Label>
+                    <Input
+                      id="detail-edit-title"
+                      placeholder="输入目标名称"
+                      value={detailEditTitle}
+                      onChange={(e) => setDetailEditTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="detail-edit-description">目标描述（可选）</Label>
+                    <Input
+                      id="detail-edit-description"
+                      placeholder="输入目标描述"
+                      value={detailEditDescription}
+                      onChange={(e) => setDetailEditDescription(e.target.value)}
+                    />
+                  </div>
+                  {/* 渲染插件注册的表单字段扩展 */}
+                  {formFieldExtensions.sort((a: any, b: any) => a.order - b.order).map((extension: any) => {
+                    const ExtensionComponent = extension.component;
+                    const extensionValues = {};
+                    const handleExtensionChange = (_field: string, _value: any) => {
+                      // 扩展字段由插件自行管理
+                    };
+                    return (
+                      <div key={extension.id} className="plugin-form-field-extension">
+                        <ExtensionComponent
+                          values={extensionValues}
+                          onChange={handleExtensionChange}
+                        />
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                // 查看模式
+                <>
+                  <div className="space-y-2">
+                    <Label>目标名称</Label>
+                    <div className="px-3 py-2 rounded-md border bg-muted/50">
+                      {detailGoal.name}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>目标描述</Label>
+                    {detailGoal.description ? (
+                      <div className="px-3 py-2 rounded-md border bg-muted/50 min-h-[80px] whitespace-pre-wrap">
+                        {detailGoal.description}
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 rounded-md border bg-muted/50 text-muted-foreground italic">
+                        无描述
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>目标ID</Label>
+                      <div className="px-3 py-2 rounded-md border bg-muted/50">
+                        {detailGoal.goal_id}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>完成状态</Label>
+                      <div className="px-3 py-2 rounded-md border bg-muted/50">
+                        {detailGoal.is_completed === 1 ? '已完成' : '未完成'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>创建时间</Label>
+                      <div className="px-3 py-2 rounded-md border bg-muted/50">
+                        {detailGoal.created_at ? new Date(detailGoal.created_at).toLocaleString('zh-CN') : '未知'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>更新时间</Label>
+                      <div className="px-3 py-2 rounded-md border bg-muted/50">
+                        {detailGoal.updated_at ? new Date(detailGoal.updated_at).toLocaleString('zh-CN') : '未知'}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter className="flex justify-between">
+            {isDetailEditing ? (
+              // 编辑模式底部按钮
+              <>
+                <Button variant="outline" onClick={() => setIsDetailEditing(false)}>
+                  取消编辑
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
+                    关闭
+                  </Button>
+                  <Button onClick={handleSaveDetailEdit}>保存更改</Button>
+                </div>
+              </>
+            ) : (
+              // 查看模式底部按钮
+              <>
+                <Button variant="default" onClick={() => setIsDetailEditing(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  编辑
+                </Button>
+                <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
+                  关闭
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -63,7 +63,7 @@ web/
 | `goalCardRenderers` | 目标卡片渲染器（可替换默认设计） |
 | `projectActionMenuItems` | 项目操作菜单项 |
 | `goalActionMenuItems` | 目标操作菜单项 |
-| `formFieldExtensions` | 表单字段扩展 |
+| `formFieldExtensions` | 目标创建/更新表单字段扩展 |
 
 注：
 表单字段扩展主要修改约束，前端显示不一定是描述约束，可以是目标本身

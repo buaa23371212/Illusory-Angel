@@ -41,18 +41,43 @@ export interface GoalCardRenderer {
 }
 
 /**
+ * 目标卡片标签接口
+ * 插件可以在默认目标卡片的标题区域添加标签
+ * 不需要替换整个卡片，只添加额外的标签展示
+ */
+export interface GoalCardBadge {
+  /** 标签唯一标识 */
+  id: string;
+  /** 标签组件 - 接收目标数据，返回要显示的标签内容 */
+  component: React.ComponentType<{
+    /** 目标数据 */
+    goal: any;
+    /** 项目ID */
+    projectId: number;
+  }>;
+}
+
+/**
  * 项目操作菜单项接口
  * 插件可以在项目操作菜单添加自定义选项
+ * 支持两种方式：
+ * 1. 简单方式：提供 label, icon, onClick
+ * 2. 组件方式：提供自定义 component，完全控制渲染
  */
 export interface ProjectActionMenuItem {
   /** 菜单项唯一标识 */
   id: string;
-  /** 菜单项文本 */
-  label: string;
+  /** 菜单项文本（简单方式必填） */
+  label?: string;
   /** 图标组件（可选） */
   icon?: React.ComponentType<{ className?: string }>;
-  /** 点击回调 */
-  onClick: (project: any) => void;
+  /** 点击回调（简单方式必填） */
+  onClick?: (project: any) => void;
+  /** 自定义组件（组件方式必填） */
+  component?: React.ComponentType<{
+    /** 项目数据 */
+    project: any;
+  }>;
   /** 是否分隔线 */
   separator?: boolean;
 }
@@ -60,16 +85,26 @@ export interface ProjectActionMenuItem {
 /**
  * 目标操作菜单项接口
  * 插件可以在目标操作菜单添加自定义选项
+ * 支持两种方式：
+ * 1. 简单方式：提供 label, icon, onClick
+ * 2. 组件方式：提供自定义 component，完全控制渲染
  */
 export interface GoalActionMenuItem {
   /** 菜单项唯一标识 */
   id: string;
-  /** 菜单项文本 */
-  label: string;
+  /** 菜单项文本（简单方式必填） */
+  label?: string;
   /** 图标组件（可选） */
   icon?: React.ComponentType<{ className?: string }>;
-  /** 点击回调 */
-  onClick: (goal: any, projectId: number) => void;
+  /** 点击回调（简单方式必填） */
+  onClick?: (goal: any, projectId: number) => void;
+  /** 自定义组件（组件方式必填） */
+  component?: React.ComponentType<{
+    /** 目标数据 */
+    goal: any;
+    /** 项目ID */
+    projectId: number;
+  }>;
   /** 是否分隔线 */
   separator?: boolean;
 }
@@ -147,6 +182,8 @@ export interface PluginRegistry {
   navigationMenuItems: NavigationMenuItem[];
   /** 目标卡片渲染器 */
   goalCardRenderers: GoalCardRenderer[];
+  /** 目标卡片标签 */
+  goalCardBadges: GoalCardBadge[];
   /** 项目操作菜单项 */
   projectActionMenuItems: ProjectActionMenuItem[];
   /** 目标操作菜单项 */
@@ -185,6 +222,7 @@ export interface Plugin {
 export const defaultRegistry: PluginRegistry = {
   navigationMenuItems: [],
   goalCardRenderers: [],
+  goalCardBadges: [],
   projectActionMenuItems: [],
   goalActionMenuItems: [],
   formFieldExtensions: [],

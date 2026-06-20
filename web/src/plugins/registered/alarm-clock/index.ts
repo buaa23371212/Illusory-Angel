@@ -4,8 +4,10 @@
  */
 import type { Plugin } from '../../';
 import { pluginRegistry } from '../../';
-import AlarmGoalCard from './components/AlarmGoalCard';
+import { AlarmGoalBadge } from './components/AlarmGoalBadge';
+import { AlarmSettingsMenuItem } from './components/AlarmSettingsMenuItem';
 import GlobalAlarmPolling from './components/GlobalAlarmPolling';
+import { registerGoalActionMenuItem } from '../../registry';
 
 // 导出类型和API
 export * from './types';
@@ -33,11 +35,17 @@ export const alarmClockPlugin: Plugin = {
   version: '1.0.0',
   apiExtensions,
   initialize: () => {
-    // 注册自定义目标卡片渲染器，显示闹钟指示器
-    pluginRegistry.registerGoalCardRenderer({
-      id: 'alarm-goal-card',
-      name: '带闹钟指示器的目标卡片',
-      component: AlarmGoalCard,
+    // 注册目标卡片标签，显示闹钟提醒指示器
+    pluginRegistry.registerGoalCardBadge({
+      id: 'alarm-goal-badge',
+      component: AlarmGoalBadge,
+    });
+
+    // 注册目标操作菜单项，提供闹钟设置入口
+    registerGoalActionMenuItem({
+      id: 'alarm-settings',
+      component: AlarmSettingsMenuItem,
+      separator: true,
     });
 
     // 注册全局组件用于轮询检查闹钟

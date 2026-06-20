@@ -1,27 +1,31 @@
 import React, { useMemo } from "react";
 import type { Plugin } from "../plugins/types";
 import { usePluginRegistry } from "../plugins/hooks";
+import { useAppState } from "../store/AppState";
 import { cn } from "../lib/utils";
 
 /**
  * 插件导航组件属性
+ * 不需要props，所有状态从AppState获取
  */
 interface PluginsNavigationProps {
-  /** 当前选中的插件 */
-  selectedPlugin: Plugin | null;
-  /** 插件选中回调 */
-  onPluginSelect: (plugin: Plugin) => void;
 }
 
 /**
  * 插件导航组件
  * 中间区域显示已安装插件列表，支持选择插件
+ * 从AppState获取全局状态，不再通过props传递
  */
-export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
-  selectedPlugin,
-  onPluginSelect,
-}) => {
+export const PluginsNavigation: React.FC<PluginsNavigationProps> = () => {
   const { pluginRegistry } = usePluginRegistry();
+  const { state, dispatch } = useAppState();
+
+  /**
+   * 处理插件选择
+   */
+  const handlePluginSelect = (plugin: Plugin) => {
+    dispatch({ type: "SELECT_PLUGIN", payload: plugin });
+  };
 
   /**
    * 获取所有已注册的插件列表
@@ -47,11 +51,11 @@ export const PluginsNavigation: React.FC<PluginsNavigationProps> = ({
                 key={plugin.id}
                 className={cn(
                   "p-3 rounded-lg border cursor-pointer transition-colors",
-                  selectedPlugin?.id === plugin.id
+                  state.selectedPlugin?.id === plugin.id
                     ? "bg-primary/10 border-primary"
                     : "bg-background hover:bg-muted/50"
                 )}
-                onClick={() => onPluginSelect(plugin)}
+                onClick={() => handlePluginSelect(plugin)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">

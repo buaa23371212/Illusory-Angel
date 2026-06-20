@@ -2,6 +2,7 @@ import type {
   PluginRegistry,
   NavigationMenuItem,
   GoalCardRenderer,
+  GoalCardBadge,
   ProjectActionMenuItem,
   GoalActionMenuItem,
   FormFieldExtension,
@@ -97,6 +98,22 @@ class PluginRegistrySingleton {
    */
   getGoalCardRenderer(id: string): GoalCardRenderer | undefined {
     return this.registry.goalCardRenderers.find(r => r.id === id);
+  }
+
+  /**
+   * 注册目标卡片标签
+   */
+  registerGoalCardBadge(badge: GoalCardBadge): void {
+    this.registry.goalCardBadges = this.registry.goalCardBadges
+      .filter(existing => existing.id !== badge.id)
+      .concat([badge]);
+  }
+
+  /**
+   * 获取所有目标卡片标签
+   */
+  getGoalCardBadges(): GoalCardBadge[] {
+    return [...this.registry.goalCardBadges];
   }
 
   /**
@@ -227,6 +244,7 @@ export const registerNavigationMenuItem = (item: NavigationMenuItem) => pluginRe
 export const registerProjectActionMenuItem = (item: ProjectActionMenuItem) => pluginRegistry.registerProjectActionMenuItem(item);
 export const registerGoalActionMenuItem = (item: GoalActionMenuItem) => pluginRegistry.registerGoalActionMenuItem(item);
 export const registerGoalCardRenderer = (renderer: GoalCardRenderer) => pluginRegistry.registerGoalCardRenderer(renderer);
+export const registerGoalCardBadge = (badge: GoalCardBadge) => pluginRegistry.registerGoalCardBadge(badge);
 export const registerFormFieldExtension = (extension: FormFieldExtension) => pluginRegistry.registerFormFieldExtension(extension);
 export const registerContentPanelExtension = (extension: ContentPanelExtension) => pluginRegistry.registerContentPanelExtension(extension);
 export const registerGlobalComponent = (component: GlobalComponent) => pluginRegistry.registerGlobalComponent(component);
@@ -238,6 +256,7 @@ export function getProjectActionMenuItems() { return pluginRegistry.getProjectAc
 export function getGoalActionMenuItems() { return pluginRegistry.getGoalActionMenuItems(); }
 export function getGoalCardRenderers() { return pluginRegistry.getGoalCardRenderers(); }
 export function getGoalCardRenderer(id: string) { return pluginRegistry.getGoalCardRenderer(id); }
+export function getGoalCardBadges() { return pluginRegistry.getGoalCardBadges(); }
 export function getFormFieldExtensions() { return pluginRegistry.getFormFieldExtensions(); }
 export function getContentPanelExtensions() { return pluginRegistry.getContentPanelExtensions(); }
 export function getContentPanelExtension(id: string) { return pluginRegistry.getContentPanelExtension(id); }

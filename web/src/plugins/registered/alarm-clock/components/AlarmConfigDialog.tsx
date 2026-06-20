@@ -21,6 +21,7 @@ import { AlarmClock, X } from 'lucide-react';
 import { getAlarmConfig, saveAlarmConfig, deleteAlarmConfig } from '../api';
 import type { SaveAlarmRequest } from '../types';
 import { dayShortNames } from '../types';
+import { toast } from 'sonner';
 
 /**
  * 闹钟配置对话框属性接口
@@ -141,11 +142,13 @@ export function AlarmConfigDialog({
       };
 
       await saveAlarmConfig(goalId, request);
+      toast.success('闹钟配置保存成功');
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
       console.error('保存闹钟配置失败:', err);
       setError(err.response?.data?.error || '保存失败，请重试');
+      toast.error('保存失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -162,11 +165,13 @@ export function AlarmConfigDialog({
 
     try {
       await deleteAlarmConfig(goalId);
+      toast.success('闹钟配置删除成功');
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
       console.error('删除闹钟配置失败:', err);
       setError(err.response?.data?.error || '删除失败，请重试');
+      toast.error('删除失败，请重试');
     } finally {
       setLoading(false);
     }
