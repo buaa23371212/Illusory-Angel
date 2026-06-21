@@ -23,23 +23,24 @@
 .tab {
   padding: 8px 16px;
   border: 1px solid var(--color-border);
-  background-color: var(--color-bg-secondary);
+  border-bottom: none;
   border-radius: 6px 6px 0 0;
   cursor: pointer;
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--color-muted-foreground);
+  background-color: var(--color-muted);
   transition: all 0.2s;
-  border-bottom: none;
 }
 
 .tab:hover {
-  background-color: var(--color-bg-hover);
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 .active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-primary-foreground);
 }
 
 .content {
@@ -96,17 +97,6 @@
 
 .nodeContent {
   position: relative;
-}
-
-.nodeContent::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background-color: var(--color-border);
-  opacity: 0.5;
 }
 
 .children {
@@ -240,6 +230,40 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* 递归树节点容器 */
+.treeNode {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 子节点容器：缩进 + 左侧引导线 */
+.treeChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 2rem;
+  padding-left: 3rem;
+  border-left: 2px solid var(--color-border);
+  border-left-color: color-mix(in srgb, var(--color-border) 100%, transparent);
+}
+
+/* 每个子节点前连接引导线的横线（只包裹卡片，不包含后代） */
+.treeChildren > .treeNode > .nodeContent {
+  position: relative;
+}
+
+.treeChildren > .treeNode > .nodeContent::before {
+  content: '';
+  position: absolute;
+  left: calc(-3rem - 1px);
+  top: 50%;
+  width: 3rem;
+  height: 2px;
+  opacity: 1;
+  background-color: var(--color-border);
+  pointer-events: none;
 }
 
 .goalNode {

@@ -3,7 +3,7 @@
  */
 
 import type { Plugin, ApiExtension } from '../../types';
-import { registerContentPanelExtension } from '../../';
+import { registerContentPanelExtension, registerPlugin } from '../../';
 import { Target } from 'lucide-react';
 import BqtjProjectContent from './components/BqtjProjectContent';
 import { BQTJ_PROJECT_CATEGORY } from './types';
@@ -46,6 +46,9 @@ export const bqtjPlugin: Plugin = {
     });
   },
 };
+
+// 导入时自动注册插件
+registerPlugin(bqtjPlugin);
 
 // 默认导出供插件系统加载
 export default bqtjPlugin;

@@ -4,7 +4,7 @@
  */
 import type { Plugin } from '../../';
 import {
-  pluginRegistry,
+  registerPlugin,
   registerContentPanelExtension,
   registerProjectActionMenuItem,
 } from '../../';
@@ -51,3 +51,6 @@ export const statisticsPlugin: Plugin = {
 
 // 导出插件
 export default statisticsPlugin;
+
+// 导入时自动注册插件
+registerPlugin(statisticsPlugin);

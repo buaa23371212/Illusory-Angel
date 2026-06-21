@@ -17,17 +17,11 @@ export { PluginProvider, usePluginContext } from './PluginContext';
 export * from './hooks';
 
 // --- 已注册插件 ---
-// 导入并自动初始化所有启用的插件
-import { pluginRegistry } from './registry';
+// 导入即自动注册并初始化所有启用的插件
 import { statisticsPlugin } from './registered/statistics';
 import { alarmClockPlugin } from './registered/alarm-clock';
 import { bqtjPlugin } from './registered/bqtj';
 import { loadPluginApiExtensions } from '@/api/pluginApiLoader';
-
-// 注册启用的插件
-pluginRegistry.registerPlugin(statisticsPlugin);
-pluginRegistry.registerPlugin(alarmClockPlugin);
-pluginRegistry.registerPlugin(bqtjPlugin);
 
 // 加载所有插件注册的API扩展到apiClient
 loadPluginApiExtensions();

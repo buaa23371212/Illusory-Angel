@@ -29,22 +29,33 @@ import type {
 export async function getAllBqtjData(projectId: number): Promise<BqtjData> {
   const repo = await getRepository();
 
-  // 查询所有相关约束
-  const [dailyConstraint, weeklyConstraint, inventoryConstraint] = await Promise.all([
+  // 先获取项目下所有目标，用于后续查询目标级约束
+  const projectGoals = await repo.goal.findByProjectId(projectId);
+  const goalIds = projectGoals.map(g => g.goalId);
+
+  // 查询项目级约束（ownerType: PROJECT）
+  const [dailyConstraint, weeklyConstraint, inventoryConstraint, materialConstraint] = await Promise.all([
     findConstraintByName(projectId, CONSTRAINT_NAMES.DAILY_DROP_LIMIT),
     findConstraintByName(projectId, CONSTRAINT_NAMES.WEEKLY_DROP_LIMIT),
     findConstraintByName(projectId, CONSTRAINT_NAMES.INVENTORY_RESOURCES),
+    findConstraintByName(projectId, CONSTRAINT_NAMES.MATERIAL_DEFINITIONS),
   ]);
+
+  // 查询目标级约束（goal_attributes 的 ownerType 为 GOAL）
+  const goalAttributes = await findAllGoalAttributes(goalIds);
 
   // 解析数据
   const dailyDropLimit = parseDailyDropLimit(dailyConstraint);
   const weeklyDropLimit = parseWeeklyDropLimit(weeklyConstraint);
   const inventoryResources = parseInventoryResources(inventoryConstraint);
+  const materialDefinitions = parseMaterialDefinitions(materialConstraint);
 
   return {
     dailyDropLimit,
     weeklyDropLimit,
     inventoryResources,
+    materialDefinitions,
+    goalAttributes,
   };
 }
 
@@ -219,4 +230,36 @@ function parseInventoryResources(constraint: Constraint | null): InventoryResour
   if (!constraint || !constraint.params) return [];
   const params = constraint.params as Record<string, InventoryResource>;
   return Object.values(params);
+}
+
+/**
+ * 解析材料定义约束数据
+ */
+function parseMaterialDefinitions(constraint: Constraint | null): Record<string, MaterialDefinition> {
+  if (!constraint || !constraint.params) return {};
+  return constraint.params as Record<string, MaterialDefinition>;
+}
+
+/**
+ * 获取项目中所有目标的目标属性约束
+ * goal_attributes 是目标级约束（ownerType: GOAL），需要收集本项目所有目标的约束
+ * @param goalIds 项目下所有目标的 ID 列表
+ * @returns 以目标ID为键的 GoalAttributes 映射
+ */
+async function findAllGoalAttributes(goalIds: number[]): Promise<Record<string, GoalAttributes>> {
+  if (goalIds.length === 0) return {};
+  const repo = await getRepository();
+
+  // 获取所有 GOAL 类型约束，过滤出 goal_attributes 且属于本项目目标
+  const allGoalConstraints = await repo.constraint.findByOwnerType('GOAL');
+  const goalAttrConstraints = allGoalConstraints.filter(
+    c => c.constraintName === CONSTRAINT_NAMES.GOAL_ATTRIBUTES && goalIds.includes(c.ownerId)
+  );
+
+  const result: Record<string, GoalAttributes> = {};
+  for (const constraint of goalAttrConstraints) {
+    result[String(constraint.ownerId)] = constraint.params as GoalAttributes;
+  }
+
+  return result;
 }

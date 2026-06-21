@@ -2,13 +2,16 @@
  * bqtj插件API接口封装
  */
 
-import axios from 'axios';
+import { apiClient } from '@/api/client';
 import type {
   MaterialDefinitionsParams,
   DailyDropLimitParams,
   WeeklyDropLimitParams,
   GoalAttributesParams,
   InventoryResourcesParams,
+  MaterialDefinition,
+  DropLimitConfig,
+  InventoryResource,
 } from '../types';
 import { BqtjConstraintNames, BqtjOwnerType } from '../types';
 
@@ -16,24 +19,11 @@ import { BqtjConstraintNames, BqtjOwnerType } from '../types';
  * 获取项目下所有bqtj数据响应结构
  */
 export interface BqtjAllDataResponse {
-  materialDefinitions: MaterialDefinitionsParams;
-  dailyDropLimit: Array<{
-    resourceId: string;
-    resourceName: string;
-    limit: number;
-    current: number;
-  }>;
-  weeklyDropLimit: Array<{
-    resourceId: string;
-    resourceName: string;
-    limit: number;
-    current: number;
-  }>;
-  inventoryResources: Array<{
-    resourceId: string;
-    resourceName: string;
-    quantity: number;
-  }>;
+  materialDefinitions: Record<string, MaterialDefinition>;
+  dailyDropLimit: DropLimitConfig[];
+  weeklyDropLimit: DropLimitConfig[];
+  inventoryResources: InventoryResource[];
+  goalAttributes: Record<string, GoalAttributesParams>;
 }
 
 /**
@@ -44,19 +34,14 @@ export interface UpdateConstraintRequest {
 }
 
 /**
- * API基础URL
- */
-const API_BASE = '/api/v1';
-
-/**
  * 获取项目下所有养成约束数据
  * @param projectId 项目ID
  */
 export async function getAllBqtjData(
   projectId: number
 ): Promise<BqtjAllDataResponse> {
-  const response = await axios.get(
-    `${API_BASE}/projects/${projectId}/plugins/bqtj`
+  const response = await apiClient.client.get(
+    `/projects/${projectId}/plugins/bqtj`
   );
 
   if (!response.data.success) {
@@ -77,8 +62,8 @@ export async function updateConstraintParams(
   constraintName: BqtjConstraintNames,
   params: UpdateConstraintRequest['params']
 ): Promise<void> {
-  const response = await axios.post(
-    `${API_BASE}/projects/${projectId}/plugins/bqtj/constraint/${constraintName}`,
+  const response = await apiClient.client.post(
+    `/projects/${projectId}/plugins/bqtj/constraint/${constraintName}`,
     { params }
   );
 
@@ -105,7 +90,7 @@ export async function createGoalWithAttributes(
   priority: number
 ): Promise<{ goal_id: number }> {
   // 1. 创建目标
-  const createResponse = await axios.post(`${API_BASE}/goals`, {
+  const createResponse = await apiClient.client.post('/goals', {
     project_id: projectId,
     name,
   });
@@ -124,7 +109,7 @@ export async function createGoalWithAttributes(
     goalType,
   };
 
-  await axios.post(`${API_BASE}/constraints`, {
+  await apiClient.client.post('/constraints', {
     ownerType: BqtjOwnerType.GOAL,
     ownerId: goalId,
     constraintName: BqtjConstraintNames.GOAL_ATTRIBUTES,
@@ -153,7 +138,7 @@ export async function updateGoalAttributes(
  * @param goalId 目标ID
  */
 export async function deleteGoal(goalId: number): Promise<void> {
-  const response = await axios.delete(`${API_BASE}/goals/${goalId}`);
+  const response = await apiClient.client.delete(`/goals/${goalId}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || '删除目标失败');

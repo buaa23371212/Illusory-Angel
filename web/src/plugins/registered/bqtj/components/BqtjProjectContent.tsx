@@ -11,10 +11,11 @@ import { DropLimitPanel } from './DropLimitPanel';
 import { InventoryPanel } from './InventoryPanel';
 import { Button } from '../../../../components/ui/button';
 import styles from './BqtjProjectContent.module.css';
-import { createGoalWithAttributes, deleteGoal } from '../api';
+import { createGoalWithAttributes, deleteGoal, getAllBqtjData } from '../api';
 import { BqtjDataManager } from '../utils';
 import { BqtjGoalCard } from './BqtjGoalCard';
 import type { DropLimitConfig, InventoryResource } from '../types';
+import type { TreeNode } from '../utils';
 
 /**
  * 爆枪英雄养成项目内容组件props接口
@@ -27,6 +28,56 @@ interface BqtjProjectContentProps {
 }
 
 type TabKey = 'goals' | 'daily' | 'weekly' | 'inventory';
+
+/**
+ * 递归渲染树节点及其子节点
+ */
+function TreeBranch({
+  nodeId,
+  depth,
+  nodes,
+  onDelete,
+  onAddChild,
+}: {
+  nodeId: number;
+  depth: number;
+  nodes: Map<number, TreeNode<any>>;
+  onDelete: (id: number) => void;
+  onAddChild: (id: number) => void;
+}): React.ReactElement | null {
+  const node = nodes.get(nodeId);
+  if (!node) return null;
+
+  return (
+    <div className={styles.treeNode}>
+      <div className={styles.nodeContent}>
+        <BqtjGoalCard
+          goalId={node.id}
+          name={node.data?.name ?? ''}
+          depth={depth}
+          requiredQuantity={node.meta?.requiredQuantity as number | undefined}
+          priority={node.meta?.priority as number | undefined}
+          onDelete={onDelete}
+          onAddChild={onAddChild}
+        />
+      </div>
+      {node.children.length > 0 && (
+        <div className={styles.treeChildren}>
+          {node.children.map(childId => (
+            <TreeBranch
+              key={childId}
+              nodeId={childId}
+              depth={depth + 1}
+              nodes={nodes}
+              onDelete={onDelete}
+              onAddChild={onAddChild}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * 爆枪英雄养成项目内容主组件
@@ -42,10 +93,10 @@ function BqtjProjectContent({
   const [showAddModal, setShowAddModal] = useState(false);
   const [newGoalName, setNewGoalName] = useState('');
 
-  // 获取项目约束（包含 goal_attributes、掉落限制、背包资源等）
-  const { data: constraints } = useQuery({
-    queryKey: ['projectConstraints', projectId],
-    queryFn: () => apiClient.getProjectConstraints(projectId),
+  // 通过插件专属 API 获取所有养成数据（含 goal_attributes、掉落限制、背包资源等）
+  const { data: bqtjData } = useQuery({
+    queryKey: ['bqtjData', projectId],
+    queryFn: () => getAllBqtjData(projectId),
   });
 
   // 获取项目下的目标列表
@@ -56,16 +107,18 @@ function BqtjProjectContent({
 
   const goals: Goal[] = goalsData?.list ?? [];
 
-  // 通过 BqtjDataManager 统一管理约束数据
+  // 通过 BqtjDataManager 统一管理插件数据（直接从插件 API 响应构建）
   const dataManager = React.useMemo(
-    () => (constraints ? new BqtjDataManager(constraints) : null),
-    [constraints]
+    () => (bqtjData ? new BqtjDataManager(bqtjData) : null),
+    [bqtjData]
   );
 
   // 构建目标树（goal_attributes 中的 parentId 确定父子关系）
   const treeManager = React.useMemo(() => {
     if (!dataManager || goals.length === 0) return null;
-    return dataManager.buildGoalTree(goals);
+    const tree = dataManager.buildGoalTree(goals);
+    console.debug('[BqtjProjectContent] 目标树:', tree);
+    return tree;
   }, [dataManager, goals]);
 
   // 材料名称映射表（用于掉落限制和背包面板显示）
@@ -110,7 +163,7 @@ function BqtjProjectContent({
       setParentGoalId(null);
       setShowAddModal(false);
       queryClient.invalidateQueries({ queryKey: ['goals', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['projectConstraints', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['bqtjData', projectId] });
       onGoalChange();
     } catch (err) {
       console.error('创建目标失败:', err);
@@ -127,7 +180,7 @@ function BqtjProjectContent({
     try {
       await deleteGoal(goalId);
       queryClient.invalidateQueries({ queryKey: ['goals', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['projectConstraints', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['bqtjData', projectId] });
       onGoalChange();
     } catch (err) {
       console.error('删除目标失败:', err);
@@ -181,18 +234,17 @@ function BqtjProjectContent({
               <Button onClick={() => { setParentGoalId(null); setShowAddModal(true); }}>添加根目标</Button>
             </div>
             <div className={styles.goalTree}>
-              {treeManager && treeManager.flatten().map(({ node, depth }) => (
-                <BqtjGoalCard
-                  key={node.id}
-                  goalId={node.id}
-                  name={node.data.name}
-                  depth={depth}
-                  showGuideLine={depth > 0}
+              {treeManager && treeManager.getTreeData().rootIds.map(rootId => (
+                <TreeBranch
+                  key={rootId}
+                  nodeId={rootId}
+                  depth={0}
+                  nodes={treeManager.getTreeData().nodes}
                   onDelete={handleDeleteGoal}
                   onAddChild={handleAddChild}
                 />
               ))}
-              {(!treeManager || treeManager.flatten().length === 0) && (
+              {(!treeManager || treeManager.getTreeData().rootIds.length === 0) && (
                 <div className={styles.empty}>暂无目标，请添加</div>
               )}
             </div>

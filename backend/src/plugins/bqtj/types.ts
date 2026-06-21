@@ -58,6 +58,8 @@ export interface BqtjData {
   dailyDropLimit: DailyDropLimit[];
   weeklyDropLimit: WeeklyDropLimit[];
   inventoryResources: InventoryResource[];
+  materialDefinitions: Record<string, MaterialDefinition>;
+  goalAttributes: Record<string, GoalAttributes>;
 }
 
 /**

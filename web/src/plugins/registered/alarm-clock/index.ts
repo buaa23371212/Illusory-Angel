@@ -58,5 +58,8 @@ export const alarmClockPlugin: Plugin = {
   },
 };
 
+// 导入时自动注册插件
+pluginRegistry.registerPlugin(alarmClockPlugin);
+
 // 导出插件
 export default alarmClockPlugin;

@@ -2,19 +2,14 @@
  * 树形结构节点数据接口
  */
 
-import type { Constraint } from '../../../../api/client';
 import type { Goal } from '../../../../api/client';
 import type {
   GoalAttributesParams,
-  MaterialDefinitionsParams,
-  DailyDropLimitParams,
-  WeeklyDropLimitParams,
-  InventoryResourcesParams,
   DropLimitConfig,
   InventoryResource,
   MaterialDefinition,
 } from '../types';
-import { BqtjConstraintNames, BqtjOwnerType } from '../types';
+import type { BqtjAllDataResponse } from '../api';
 export interface TreeNode<T> {
   /** 节点ID */
   id: number;
@@ -26,6 +21,8 @@ export interface TreeNode<T> {
   parentId: number | null;
   /** 是否折叠 */
   collapsed: boolean;
+  /** 额外元数据（如 goal_attributes 中的字段） */
+  meta?: Record<string, unknown>;
 }
 
 /**
@@ -309,16 +306,45 @@ export class TreeManager<T> {
    */
   static buildFromGoals<G>(
     goals: Array<{ goal_id: number; name: string }>,
-    goalAttributes: Map<number, { parentId?: number | null }>
+    goalAttributes: Map<number, { parentId?: number | null; requiredQuantity?: number; priority?: number; goalType?: string }>
   ): TreeManager<G> {
     const manager = new TreeManager<G>();
 
-    goals.forEach(goal => {
+    // 第一遍：创建所有节点，根据 parentId 是否为 null 决定根节点归属
+    for (const goal of goals) {
       const attrs = goalAttributes.get(goal.goal_id);
       const parentId = attrs?.parentId ?? null;
-      manager.addNode(goal.goal_id, goal as unknown as G, parentId);
-    });
+      const node: TreeNode<G> = {
+        id: goal.goal_id,
+        data: goal as unknown as G,
+        children: [],
+        parentId,
+        collapsed: false,
+        meta: {
+          requiredQuantity: attrs?.requiredQuantity,
+          priority: attrs?.priority,
+          goalType: attrs?.goalType,
+        },
+      };
+      manager.treeData.nodes.set(goal.goal_id, node);
+      if (parentId === null) {
+        manager.treeData.rootIds.push(goal.goal_id);
+      }
+    }
 
+    // 第二遍：建立父子链接（此时所有节点均已就绪，无顺序依赖）
+    for (const node of manager.treeData.nodes.values()) {
+      if (node.parentId === null) continue;
+      const parent = manager.treeData.nodes.get(node.parentId);
+      if (parent) {
+        parent.children.push(node.id);
+      } else {
+        // 父节点不存在（数据异常），降级为根节点
+        manager.treeData.rootIds.push(node.id);
+        console.warn("[TreeManager] 节点:", node, "没有父节点，已降级为根节点");
+      }
+    }
+    
     return manager;
   }
 }
@@ -396,58 +422,33 @@ export class BqtjDataManager {
   /** 背包资源映射表（resourceId → 资源） */
   readonly inventoryResources: Map<string, InventoryResource>;
 
-  constructor(constraints: Constraint[]) {
+  constructor(data: BqtjAllDataResponse) {
     this.goalAttributes = new Map();
     this.materialDefinitions = new Map();
-    this.dailyDropLimit = [];
-    this.weeklyDropLimit = [];
+    this.dailyDropLimit = data.dailyDropLimit ?? [];
+    this.weeklyDropLimit = data.weeklyDropLimit ?? [];
     this.inventoryResources = new Map();
 
-    for (const c of constraints) {
-      if (c.is_deleted) continue;
-      this.parseConstraint(c);
+    // 材料定义映射
+    if (data.materialDefinitions) {
+      for (const [key, value] of Object.entries(data.materialDefinitions)) {
+        this.materialDefinitions.set(key, value);
+      }
     }
-  }
 
-  private parseConstraint(c: Constraint): void {
-    const rawParams = c.params as Record<string, unknown>;
+    // 目标属性：后端响应中内层键已转为 snake_case（如 parentId → parent_id），
+    // 需要转换为 camelCase 以匹配 TypeScript 类型
+    if (data.goalAttributes) {
+      for (const [key, value] of Object.entries(data.goalAttributes)) {
+        this.goalAttributes.set(Number(key), keysToCamel(value));
+      }
+    }
 
-    switch (c.constraint_name) {
-      case BqtjConstraintNames.GOAL_ATTRIBUTES:
-        if (c.owner_type === BqtjOwnerType.GOAL) {
-          this.goalAttributes.set(c.owner_id, keysToCamel(rawParams));
-        }
-        break;
-
-      case BqtjConstraintNames.MATERIAL_DEFINITIONS:
-        for (const [key, value] of Object.entries(rawParams)) {
-          const def = keysToCamel<MaterialDefinition>(value);
-          if (def?.materialId) {
-            this.materialDefinitions.set(key, def);
-          }
-        }
-        break;
-
-      case BqtjConstraintNames.DAILY_DROP_LIMIT:
-        this.dailyDropLimit = Object.values(rawParams)
-          .map(v => keysToCamel<DropLimitConfig>(v))
-          .filter(v => typeof v.resourceId === 'string');
-        break;
-
-      case BqtjConstraintNames.WEEKLY_DROP_LIMIT:
-        this.weeklyDropLimit = Object.values(rawParams)
-          .map(v => keysToCamel<DropLimitConfig>(v))
-          .filter(v => typeof v.resourceId === 'string');
-        break;
-
-      case BqtjConstraintNames.INVENTORY_RESOURCES:
-        for (const [key, value] of Object.entries(rawParams)) {
-          const res = keysToCamel<InventoryResource>(value);
-          if (res?.resourceId) {
-            this.inventoryResources.set(key, res);
-          }
-        }
-        break;
+    // 背包资源：数组转换为 Map，便于按 resourceId 查找
+    if (data.inventoryResources) {
+      for (const res of data.inventoryResources) {
+        this.inventoryResources.set(res.resourceId, res);
+      }
     }
   }
 
