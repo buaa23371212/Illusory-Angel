@@ -5,7 +5,6 @@ import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
-import { Badge } from './ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import { Plus, Target, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
@@ -35,7 +34,6 @@ export function GoalList({ selectedProject, onGoalChange }: GoalListProps) {
   // 查看目标详情对话框状态
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [detailGoal, setDetailGoal] = useState<Goal | null>(null)
-  const [detailConstraints, setDetailConstraints] = useState<any[]>([])
   // 详情对话框编辑模式状态
   const [isDetailEditing, setIsDetailEditing] = useState(false)
   const [detailEditTitle, setDetailEditTitle] = useState('')

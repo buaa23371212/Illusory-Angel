@@ -21,11 +21,13 @@ export * from './hooks';
 import { pluginRegistry } from './registry';
 import { statisticsPlugin } from './registered/statistics';
 import { alarmClockPlugin } from './registered/alarm-clock';
+import { bqtjPlugin } from './registered/bqtj';
 import { loadPluginApiExtensions } from '@/api/pluginApiLoader';
 
 // 注册启用的插件
 pluginRegistry.registerPlugin(statisticsPlugin);
 pluginRegistry.registerPlugin(alarmClockPlugin);
+pluginRegistry.registerPlugin(bqtjPlugin);
 
 // 加载所有插件注册的API扩展到apiClient
 loadPluginApiExtensions();

@@ -3,6 +3,16 @@
  */
 
 /**
+ * 材料定义
+ */
+export interface MaterialDefinition {
+  materialId: string;
+  materialName: string;
+  materialImageURL: string;
+  description?: string;
+}
+
+/**
  * 每日掉落限制配置
  */
 export interface DailyDropLimit {
@@ -10,7 +20,6 @@ export interface DailyDropLimit {
   resourceName: string;
   limit: number;
   current: number;
-  resetAt: number;
 }
 
 /**
@@ -21,7 +30,6 @@ export interface WeeklyDropLimit {
   resourceName: string;
   limit: number;
   current: number;
-  resetAt: number;
 }
 
 /**
@@ -38,7 +46,6 @@ export interface InventoryResource {
  */
 export interface GoalAttributes {
   priority: number;
-  level: number;
   parentId: number | null;
   requiredQuantity: number;
   goalType: string;
@@ -64,10 +71,11 @@ export interface UpdateConstraintRequest {
  * 约束名称常量定义
  */
 export const CONSTRAINT_NAMES = {
+  MATERIAL_DEFINITIONS: 'material_definitions',
   DAILY_DROP_LIMIT: 'daily_drop_limit',
   WEEKLY_DROP_LIMIT: 'weekly_drop_limit',
-  INVENTORY_RESOURCES: 'inventory_resources',
   GOAL_ATTRIBUTES: 'goal_attributes',
+  INVENTORY_RESOURCES: 'inventory_resources',
 } as const;
 
 /**
@@ -79,8 +87,7 @@ export function isValidDailyDropLimit(obj: unknown): obj is DailyDropLimit {
   return typeof o.resourceId === 'string' &&
     typeof o.resourceName === 'string' &&
     typeof o.limit === 'number' &&
-    typeof o.current === 'number' &&
-    typeof o.resetAt === 'number';
+    typeof o.current === 'number';
 }
 
 /**
@@ -92,8 +99,7 @@ export function isValidWeeklyDropLimit(obj: unknown): obj is WeeklyDropLimit {
   return typeof o.resourceId === 'string' &&
     typeof o.resourceName === 'string' &&
     typeof o.limit === 'number' &&
-    typeof o.current === 'number' &&
-    typeof o.resetAt === 'number';
+    typeof o.current === 'number';
 }
 
 /**
@@ -114,8 +120,19 @@ export function isValidGoalAttributes(obj: unknown): obj is GoalAttributes {
   if (typeof obj !== 'object' || obj === null) return false;
   const o = obj as GoalAttributes;
   return typeof o.priority === 'number' &&
-    typeof o.level === 'number' &&
     (o.parentId === null || typeof o.parentId === 'number') &&
     typeof o.requiredQuantity === 'number' &&
     typeof o.goalType === 'string';
+}
+
+/**
+ * 验证材料定义对象是否有效
+ */
+export function isValidMaterialDefinition(obj: unknown): obj is MaterialDefinition {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as MaterialDefinition;
+  return typeof o.materialId === 'string' &&
+    typeof o.materialName === 'string' &&
+    typeof o.materialImageURL === 'string' &&
+    (o.description === undefined || typeof o.description === 'string');
 }

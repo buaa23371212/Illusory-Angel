@@ -12,6 +12,7 @@ import type { ContentPanelExtension, ProjectActionMenuItem } from "./plugins/typ
 import { Toaster } from "./components/ui/sonner";
 import { Target } from "lucide-react";
 import { toast } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PluginProvider, usePlugins } from "./plugins";
 import { AppStateProvider, useAppState } from "./store/AppState";
 import { FeatureSidebar } from "./components/FeatureSidebar";
@@ -118,6 +119,8 @@ function AppContent() {
   );
 }
 
+const queryClient = new QueryClient();
+
 /**
  * 主应用组件
  * 三栏布局：最左侧功能选择栏 + 中间功能导航栏 + 右侧主体内容区
@@ -125,11 +128,13 @@ function AppContent() {
  */
 function App() {
   return (
-    <PluginProvider>
-      <AppStateProvider>
-        <AppContent />
-      </AppStateProvider>
-    </PluginProvider>
+    <QueryClientProvider client={queryClient}>
+      <PluginProvider>
+        <AppStateProvider>
+          <AppContent />
+        </AppStateProvider>
+      </PluginProvider>
+    </QueryClientProvider>
   );
 }
 

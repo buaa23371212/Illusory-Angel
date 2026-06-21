@@ -5,9 +5,9 @@
 import type { Plugin } from '../../';
 import { pluginRegistry } from '../../';
 import { AlarmGoalBadge } from './components/AlarmGoalBadge';
-import { AlarmSettingsMenuItem } from './components/AlarmSettingsMenuItem';
 import GlobalAlarmPolling from './components/GlobalAlarmPolling';
 import { registerGoalActionMenuItem } from '../../registry';
+import { Settings } from 'lucide-react';
 
 // 导出类型和API
 export * from './types';
@@ -42,9 +42,11 @@ export const alarmClockPlugin: Plugin = {
     });
 
     // 注册目标操作菜单项，提供闹钟设置入口
+    // 使用简单方式：label + icon + onClick，不需要自定义组件
     registerGoalActionMenuItem({
       id: 'alarm-settings',
-      component: AlarmSettingsMenuItem,
+      label: '闹钟设置',
+      icon: Settings,
       separator: true,
     });
 

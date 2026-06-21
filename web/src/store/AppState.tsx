@@ -94,7 +94,7 @@ function appReducer(state: AppState, action: Action): AppState {
       return { ...state, loading: action.payload };
 
     case "SELECT_PROJECT":
-      return { ...state, selectedProject: action.payload };
+      return { ...state, selectedProject: action.payload, activeContentPanel: null };
 
     case "UPDATE_PROGRESS_CACHE":
       return {

@@ -257,7 +257,7 @@ export class ApiClient {
    * 获取所有者的所有约束
    */
   async getConstraints(
-    ownerType: 'project' | 'goal',
+    ownerType: 'PROJECT' | 'GOAL',
     ownerId: number
   ): Promise<Constraint[]> {
     const response: AxiosResponse<ConstraintListResponse> = await this.client.get(

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from './ui/card';
 import { CardContent } from './ui/card';
-import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import {
@@ -11,9 +10,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu';
-import { MoreVertical, Pencil, Eye, Trash2 } from 'lucide-react';
+import { MoreVertical, Eye, Trash2 } from 'lucide-react';
 import type { Goal } from '../api/client';
-import { apiClient } from '../api/client';
 import { getGoalActionMenuItems, getGoalCardBadges } from '../plugins/registry';
 import type { GoalActionMenuItem, GoalCardBadge } from '../plugins/types';
 import { AlarmConfigDialog } from '../plugins/registered/alarm-clock/components/AlarmConfigDialog';
@@ -123,16 +121,22 @@ export function GoalCard({
                 {goalActionMenuItems.length > 0 && <DropdownMenuSeparator />}
                 {/* 渲染插件注册的自定义目标操作菜单项 */}
                 {goalActionMenuItems.map((item) => {
-                  // 如果是闹钟设置组件，传入自定义点击处理器
+                  // 如果是闹钟设置，使用自定义点击处理器
                   if (item.id === 'alarm-settings') {
-                    const ItemComponent = item.component;
+                    const Icon = item.icon;
                     return (
-                      <ItemComponent
-                        key={item.id}
-                        goal={goal}
-                        projectId={projectId}
-                        onClick={handleAlarmSettingsClick}
-                      />
+                      <React.Fragment key={item.id}>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAlarmSettingsClick();
+                          }}
+                        >
+                          {Icon && <Icon className="mr-2 h-4 w-4" />}
+                          {item.label}
+                        </DropdownMenuItem>
+                        {item.separator && <DropdownMenuSeparator />}
+                      </React.Fragment>
                     );
                   }
                   // 如果提供了component，则使用组件渲染

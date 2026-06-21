@@ -62,6 +62,23 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     }
   }
 
+  // 默认行为：检查是否有插件面板声明匹配当前项目的分类
+  const matchingPanel = state.selectedProject
+    ? contentPanels.find(p => p.matchProjectCategory && p.matchProjectCategory === state.selectedProject?.category)
+    : null;
+  if (matchingPanel) {
+    return (
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          <matchingPanel.component
+            selectedProject={state.selectedProject}
+            onGoalChange={handleGoalChange}
+          />
+        </div>
+      </main>
+    );
+  }
+
   // 默认显示目标列表
   return (
     <main className="flex-1 overflow-y-auto">

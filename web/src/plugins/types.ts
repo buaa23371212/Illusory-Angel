@@ -149,6 +149,8 @@ export interface ContentPanelExtension {
   }>;
   /** 排序位置 */
   order?: number;
+  /** 匹配的项目分类：选中该分类的项目时自动显示此面板，而非默认的 GoalList */
+  matchProjectCategory?: string;
 }
 
 /**

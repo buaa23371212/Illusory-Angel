@@ -5,12 +5,20 @@
 
 import { getRepository } from '../../repositories';
 import type { Constraint } from '@prisma/client';
-import { CONSTRAINT_NAMES } from './types';
+import {
+  CONSTRAINT_NAMES,
+  isValidDailyDropLimit,
+  isValidWeeklyDropLimit,
+  isValidInventoryResource,
+  isValidGoalAttributes,
+  isValidMaterialDefinition,
+} from './types';
 import type {
   BqtjData,
   DailyDropLimit,
   WeeklyDropLimit,
   InventoryResource,
+  MaterialDefinition,
 } from './types';
 
 /**
@@ -33,14 +41,101 @@ export async function getAllBqtjData(projectId: number): Promise<BqtjData> {
   const weeklyDropLimit = parseWeeklyDropLimit(weeklyConstraint);
   const inventoryResources = parseInventoryResources(inventoryConstraint);
 
-  // 自动重置过期的掉落限制
-  await resetExpiredLimits(projectId);
-
   return {
     dailyDropLimit,
     weeklyDropLimit,
     inventoryResources,
   };
+}
+
+/**
+ * 验证 params 数据结构是否匹配对应约束类型
+ * @param constraintName 约束名称
+ * @param params 需要验证的参数对象
+ * @returns 验证是否通过
+ */
+function validateParamsByConstraintName(
+  constraintName: string,
+  params: Record<string, unknown>
+): boolean {
+  // params 必须是对象
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+
+  switch (constraintName) {
+    case CONSTRAINT_NAMES.MATERIAL_DEFINITIONS: {
+      // 验证每个材料定义
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof key !== 'string' || !isValidMaterialDefinition(value)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    case CONSTRAINT_NAMES.DAILY_DROP_LIMIT: {
+      // 验证每个每日掉落限制
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof key !== 'string' || !isValidDailyDropLimit(value)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    case CONSTRAINT_NAMES.WEEKLY_DROP_LIMIT: {
+      // 验证每个每周掉落限制
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof key !== 'string' || !isValidWeeklyDropLimit(value)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    case CONSTRAINT_NAMES.GOAL_ATTRIBUTES: {
+      // 目标属性直接是对象，不是键值对
+      // 目标级约束，params 直接就是目标属性对象
+      // 这里只验证结构，不要求所有字段都存在（允许部分更新）
+      if (Array.isArray(params)) {
+        return false;
+      }
+      // 检查已知字段类型（如果存在）
+      const attrs = params as Partial<{
+        priority: unknown;
+        parentId: unknown;
+        requiredQuantity: unknown;
+        goalType: unknown;
+      }>;
+      if (attrs.priority !== undefined && typeof attrs.priority !== 'number') {
+        return false;
+      }
+      if (attrs.parentId !== undefined && attrs.parentId !== null && typeof attrs.parentId !== 'number') {
+        return false;
+      }
+      if (attrs.requiredQuantity !== undefined && typeof attrs.requiredQuantity !== 'number') {
+        return false;
+      }
+      if (attrs.goalType !== undefined && typeof attrs.goalType !== 'string') {
+        return false;
+      }
+      return true;
+    }
+
+    case CONSTRAINT_NAMES.INVENTORY_RESOURCES: {
+      // 验证每个背包资源
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof key !== 'string' || !isValidInventoryResource(value)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    default:
+      return false;
+  }
 }
 
 /**
@@ -60,6 +155,11 @@ export async function updateConstraintParams(
   // 验证约束名称是否合法
   const validNames = Object.values(CONSTRAINT_NAMES);
   if (!validNames.includes(constraintName as any)) {
+    return false;
+  }
+
+  // 验证 params 数据结构是否匹配约束类型
+  if (!validateParamsByConstraintName(constraintName, params)) {
     return false;
   }
 
@@ -119,95 +219,4 @@ function parseInventoryResources(constraint: Constraint | null): InventoryResour
   if (!constraint || !constraint.params) return [];
   const params = constraint.params as Record<string, InventoryResource>;
   return Object.values(params);
-}
-
-/**
- * 计算下一次每日重置时间戳（次日凌晨00:00）
- */
-function getNextDailyResetTime(): number {
-  const now = new Date();
-  const tomorrow = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + 1,
-    0,
-    0,
-    0,
-    0
-  );
-  return tomorrow.getTime();
-}
-
-/**
- * 计算下一次每周重置时间戳（下周一凌晨00:00）
- */
-function getNextWeeklyResetTime(): number {
-  const now = new Date();
-  const currentDay = now.getDay(); // 0=周日, 1=周一...6=周六
-  const daysToNextMonday = currentDay === 0 ? 1 : 8 - currentDay;
-  const nextMonday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + daysToNextMonday,
-    0,
-    0,
-    0,
-    0
-  );
-  return nextMonday.getTime();
-}
-
-/**
- * 重置过期的掉落限制
- * 如果当前时间超过 resetAt，则将 current 重置为 0 并更新 resetAt 到下一个周期
- */
-export async function resetExpiredLimits(projectId: number): Promise<void> {
-  const repo = await getRepository();
-  const now = Date.now();
-
-  // 处理每日掉落限制
-  const dailyConstraint = await findConstraintByName(
-    projectId,
-    CONSTRAINT_NAMES.DAILY_DROP_LIMIT
-  );
-  if (dailyConstraint && dailyConstraint.params) {
-    const params = dailyConstraint.params as Record<string, DailyDropLimit>;
-    let needUpdate = false;
-
-    for (const [key, limit] of Object.entries(params)) {
-      if (limit.resetAt <= now) {
-        limit.current = 0;
-        limit.resetAt = getNextDailyResetTime();
-        params[key] = limit;
-        needUpdate = true;
-      }
-    }
-
-    if (needUpdate) {
-      await repo.constraint.update(dailyConstraint.constraintId, { params });
-    }
-  }
-
-  // 处理每周掉落限制
-  const weeklyConstraint = await findConstraintByName(
-    projectId,
-    CONSTRAINT_NAMES.WEEKLY_DROP_LIMIT
-  );
-  if (weeklyConstraint && weeklyConstraint.params) {
-    const params = weeklyConstraint.params as Record<string, WeeklyDropLimit>;
-    let needUpdate = false;
-
-    for (const [key, limit] of Object.entries(params)) {
-      if (limit.resetAt <= now) {
-        limit.current = 0;
-        limit.resetAt = getNextWeeklyResetTime();
-        params[key] = limit;
-        needUpdate = true;
-      }
-    }
-
-    if (needUpdate) {
-      await repo.constraint.update(weeklyConstraint.constraintId, { params });
-    }
-  }
 }

@@ -23,19 +23,6 @@ export const statisticsPlugin: Plugin = {
   description: '在项目内容区显示项目统计信息，包括目标完成进度、完成率统计等',
   version: '1.0.0',
   initialize: () => {
-    // 注册导航栏菜单项 - 点击后可以跳转到统计页面（这里示例只显示提示）
-    pluginRegistry.registerNavigationMenuItem({
-      id: 'statistics-overview',
-      label: '统计概览',
-      icon: BarChart3,
-      order: 10,
-      onClick: () => {
-        // 这里可以打开统计模态框或跳转
-        console.log('打开统计概览');
-        window.alert('统计概览功能示例\n\n在实际使用中，这里可以打开一个统计页面或模态框，展示所有项目的统计数据');
-      },
-    });
-
     // 注册内容区面板扩展
     registerContentPanelExtension({
       id: 'project-statistics',

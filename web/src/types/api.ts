@@ -677,7 +677,7 @@ export interface paths {
                 header?: never;
                 path: {
                     /** @description 所有者类型 */
-                    ownerType: "project" | "goal";
+                    ownerType: "PROJECT" | "GOAL";
                     /** @description 所有者ID */
                     ownerId: number;
                 };
@@ -840,7 +840,7 @@ export interface components {
              * @description 所有者类型
              * @enum {string}
              */
-            owner_type: "project" | "goal";
+            owner_type: "PROJECT" | "GOAL";
             /** @description 所有者ID */
             owner_id: number;
             /** @description 约束名称 */
@@ -868,7 +868,7 @@ export interface components {
              * @description 所有者类型
              * @enum {string}
              */
-            owner_type: "project" | "goal";
+            owner_type: "PROJECT" | "GOAL";
             /** @description 所有者ID */
             owner_id: number;
             /** @description 约束名称 */

@@ -170,7 +170,8 @@ async function runTest(): Promise<void> {
     console.log('\n📋 步骤2：创建爆枪英雄养成测试项目');
     const projectData = {
       name: '爆枪英雄养成计划',
-      description: '氩星青蜂养成计划'
+      description: '氩星青蜂养成计划',
+      category: 'bqtj_training'
     };
     const projectResponse = await axios.post(`${API_BASE}/projects`, projectData);
     if (!projectResponse.data.success) {

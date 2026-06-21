@@ -61,6 +61,7 @@ web/
 | `navigationMenuItems` | 主导航栏菜单项 |
 | `contentPanelExtensions` | 内容区面板扩展 |
 | `goalCardRenderers` | 目标卡片渲染器（可替换默认设计） |
+| `GoalCardBadge` | 目标卡片标签接口 |
 | `projectActionMenuItems` | 项目操作菜单项 |
 | `goalActionMenuItems` | 目标操作菜单项 |
 | `formFieldExtensions` | 目标创建/更新表单字段扩展 |
