@@ -34,7 +34,8 @@ backend/
 │   │   ├── json/      # JSON 文件存储实现
 │   │   └── prisma/    # Prisma 存储实现
 │   ├── routes/        # 路由定义
-│   └── utils/         # 工具函数
+│   ├── utils/         # 工具函数
+|   └── plugins/           # 插件系统核心代码
 ├── test/              # 测试脚本
 └── dist/              # 编译输出（构建后生成）
 ```

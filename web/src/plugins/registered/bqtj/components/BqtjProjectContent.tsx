@@ -10,8 +10,11 @@ import { apiClient } from '../../../../api/client';
 import { DropLimitPanel } from './DropLimitPanel';
 import { InventoryPanel } from './InventoryPanel';
 import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../../components/ui/dialog';
 import styles from './BqtjProjectContent.module.css';
-import { createGoalWithAttributes, deleteGoal, getAllBqtjData } from '../api';
+import { createGoalWithAttributes, deleteGoal, getAllBqtjData, setGoalParentId, updateSingleGoalAttributes } from '../api';
 import { BqtjDataManager } from '../utils';
 import { BqtjGoalCard } from './BqtjGoalCard';
 import type { DropLimitConfig, InventoryResource } from '../types';
@@ -38,12 +41,16 @@ function TreeBranch({
   nodes,
   onDelete,
   onAddChild,
+  onAddParent,
+  onViewDetail,
 }: {
   nodeId: number;
   depth: number;
   nodes: Map<number, TreeNode<any>>;
   onDelete: (id: number) => void;
   onAddChild: (id: number) => void;
+  onAddParent?: (id: number) => void;
+  onViewDetail?: (id: number) => void;
 }): React.ReactElement | null {
   const node = nodes.get(nodeId);
   if (!node) return null;
@@ -59,6 +66,8 @@ function TreeBranch({
           priority={node.meta?.priority as number | undefined}
           onDelete={onDelete}
           onAddChild={onAddChild}
+          onAddParent={onAddParent}
+          onViewDetail={onViewDetail}
         />
       </div>
       {node.children.length > 0 && (
@@ -71,6 +80,8 @@ function TreeBranch({
               nodes={nodes}
               onDelete={onDelete}
               onAddChild={onAddChild}
+              onAddParent={onAddParent}
+              onViewDetail={onViewDetail}
             />
           ))}
         </div>
@@ -92,6 +103,9 @@ function BqtjProjectContent({
   const [activeTab, setActiveTab] = useState<TabKey>('goals');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newGoalName, setNewGoalName] = useState('');
+  const [newGoalQuantity, setNewGoalQuantity] = useState(1);
+  const [newGoalPriority, setNewGoalPriority] = useState(3);
+  const [newGoalType, setNewGoalType] = useState<'equipment_craft' | 'resource_collection'>('resource_collection');
 
   // 通过插件专属 API 获取所有养成数据（含 goal_attributes、掉落限制、背包资源等）
   const { data: bqtjData } = useQuery({
@@ -154,12 +168,15 @@ function BqtjProjectContent({
         projectId,
         newGoalName.trim(),
         parentGoalId,
-        1,
-        'resource_collection',
-        50
+        newGoalQuantity,
+        newGoalType,
+        newGoalPriority
       );
 
       setNewGoalName('');
+      setNewGoalQuantity(1);
+      setNewGoalPriority(3);
+      setNewGoalType('resource_collection');
       setParentGoalId(null);
       setShowAddModal(false);
       queryClient.invalidateQueries({ queryKey: ['goals', projectId] });
@@ -195,6 +212,111 @@ function BqtjProjectContent({
   const handleAddChild = (parentId: number) => {
     setParentGoalId(parentId);
     setShowAddModal(true);
+  };
+
+  /**
+   * 添加父目标对话框状态
+   */
+  const [showAddParentModal, setShowAddParentModal] = useState(false);
+  const [addParentChildId, setAddParentChildId] = useState<number | null>(null);
+  const [newParentName, setNewParentName] = useState('');
+
+  /**
+   * 处理添加父目标
+   * 创建一个新目标作为当前目标的父级，并更新当前目标的parentId
+   */
+  const handleAddParent = (goalId: number) => {
+    setAddParentChildId(goalId);
+    setNewParentName('');
+    setShowAddParentModal(true);
+  };
+
+  /**
+   * 确认创建父目标
+   */
+  const handleConfirmAddParent = async () => {
+    if (!newParentName.trim() || addParentChildId === null) {
+      alert('请输入父目标名称');
+      return;
+    }
+
+    try {
+      // 1. 创建父目标（无parentId，作为根目标）
+      const { goal_id: newParentId } = await createGoalWithAttributes(
+        projectId,
+        newParentName.trim(),
+        null,
+        newGoalQuantity,
+        newGoalType,
+        newGoalPriority
+      );
+
+      // 2. 更新当前目标的parentId指向新父目标
+      await setGoalParentId(addParentChildId, newParentId);
+
+      setNewParentName('');
+      setAddParentChildId(null);
+      setShowAddParentModal(false);
+      queryClient.invalidateQueries({ queryKey: ['goals', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['bqtjData', projectId] });
+      onGoalChange();
+    } catch (err) {
+      console.error('添加父目标失败:', err);
+      alert('添加父目标失败');
+    }
+  };
+
+  /**
+   * 查看/编辑目标详情对话框状态
+   */
+  const [detailDialogGoalId, setDetailDialogGoalId] = useState<number | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [isDetailEditing, setIsDetailEditing] = useState(false);
+  const [detailName, setDetailName] = useState('');
+  const [detailQuantity, setDetailQuantity] = useState(1);
+  const [detailPriority, setDetailPriority] = useState(3);
+  const [detailGoalType, setDetailGoalType] = useState<'equipment_craft' | 'resource_collection'>('resource_collection');
+
+  /**
+   * 打开查看详情对话框
+   */
+  const handleViewDetail = (goalId: number) => {
+    const node = treeManager?.getTreeData().nodes.get(goalId);
+    setDetailDialogGoalId(goalId);
+    setDetailName((node?.data as any)?.name ?? '');
+    setDetailQuantity((node?.meta?.requiredQuantity as number) ?? 1);
+    setDetailPriority((node?.meta?.priority as number) ?? 3);
+    setDetailGoalType((node?.meta?.goalType as 'equipment_craft' | 'resource_collection') ?? 'resource_collection');
+    setIsDetailEditing(false);
+    setShowDetailDialog(true);
+  };
+
+  /**
+   * 保存编辑的目标信息
+   */
+  const handleSaveDetail = async () => {
+    if (detailDialogGoalId === null) return;
+
+    try {
+      // 更新目标名称
+      await apiClient.updateGoal(detailDialogGoalId, { name: detailName });
+
+      // 更新goal_attributes
+      await updateSingleGoalAttributes(detailDialogGoalId, {
+        requiredQuantity: detailQuantity,
+        priority: detailPriority,
+        goalType: detailGoalType,
+      });
+
+      setShowDetailDialog(false);
+      setDetailDialogGoalId(null);
+      queryClient.invalidateQueries({ queryKey: ['goals', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['bqtjData', projectId] });
+      onGoalChange();
+    } catch (err) {
+      console.error('更新目标信息失败:', err);
+      alert('更新目标信息失败');
+    }
   };
 
   return (
@@ -242,6 +364,8 @@ function BqtjProjectContent({
                   nodes={treeManager.getTreeData().nodes}
                   onDelete={handleDeleteGoal}
                   onAddChild={handleAddChild}
+                  onAddParent={handleAddParent}
+                  onViewDetail={handleViewDetail}
                 />
               ))}
               {(!treeManager || treeManager.getTreeData().rootIds.length === 0) && (
@@ -280,26 +404,200 @@ function BqtjProjectContent({
         )}
       </div>
 
-      {showAddModal && (
-        <div className={styles.modalOverlay} onClick={() => { setParentGoalId(null); setShowAddModal(false); }}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <h3>{parentGoalId ? '添加子目标' : '添加新目标'}</h3>
-            <input
-              type="text"
-              placeholder="目标名称"
-              value={newGoalName}
-              onChange={e => setNewGoalName(e.target.value)}
-              className={styles.input}
-            />
-            <div className={styles.modalActions}>
-              <Button variant="secondary" onClick={() => { setParentGoalId(null); setShowAddModal(false); }}>
-                取消
-              </Button>
-              <Button onClick={handleAddGoal}>创建</Button>
+      <Dialog open={showAddModal} onOpenChange={(open) => { if (!open) { setNewGoalName(''); setNewGoalQuantity(1); setNewGoalPriority(3); setNewGoalType('resource_collection'); setParentGoalId(null); setShowAddModal(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{parentGoalId ? '添加子目标' : '添加新目标'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>目标名称</Label>
+              <Input
+                placeholder="目标名称"
+                value={newGoalName}
+                onChange={e => setNewGoalName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>需求数量</Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="完成所需数量"
+                value={newGoalQuantity}
+                onChange={e => setNewGoalQuantity(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>优先级</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={newGoalPriority}
+                onChange={e => setNewGoalPriority(Number(e.target.value))}
+              >
+                <option value={1}>1 - 最高</option>
+                <option value={2}>2 - 高</option>
+                <option value={3}>3 - 中</option>
+                <option value={4}>4 - 低</option>
+                <option value={5}>5 - 最低</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>目标类型</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={newGoalType}
+                onChange={e => setNewGoalType(e.target.value as 'equipment_craft' | 'resource_collection')}
+              >
+                <option value="resource_collection">资源收集</option>
+                <option value="equipment_craft">装备制作</option>
+              </select>
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setParentGoalId(null); setShowAddModal(false); }}>
+              取消
+            </Button>
+            <Button onClick={handleAddGoal}>创建</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 添加父目标对话框 */}
+      <Dialog open={showAddParentModal} onOpenChange={(open) => { if (!open) { setNewParentName(''); setAddParentChildId(null); setShowAddParentModal(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加父目标</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>父目标名称</Label>
+              <Input
+                placeholder="新父目标的名称"
+                value={newParentName}
+                onChange={e => setNewParentName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>需求数量</Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="完成所需数量"
+                value={newGoalQuantity}
+                onChange={e => setNewGoalQuantity(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>优先级</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={newGoalPriority}
+                onChange={e => setNewGoalPriority(Number(e.target.value))}
+              >
+                <option value={1}>1 - 最高</option>
+                <option value={2}>2 - 高</option>
+                <option value={3}>3 - 中</option>
+                <option value={4}>4 - 低</option>
+                <option value={5}>5 - 最低</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>目标类型</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={newGoalType}
+                onChange={e => setNewGoalType(e.target.value as 'equipment_craft' | 'resource_collection')}
+              >
+                <option value="resource_collection">资源收集</option>
+                <option value="equipment_craft">装备制作</option>
+              </select>
+            </div>
+            <p className="text-xs text-[var(--color-muted-foreground)]">
+              将创建一个新目标，当前目标会成为其子目标
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNewParentName(''); setAddParentChildId(null); setShowAddParentModal(false); }}>
+              取消
+            </Button>
+            <Button onClick={handleConfirmAddParent}>创建父目标</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 目标详情/编辑对话框 */}
+      <Dialog open={showDetailDialog} onOpenChange={(open) => { if (!open) { setShowDetailDialog(false); setDetailDialogGoalId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{isDetailEditing ? '编辑目标' : '目标详情'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>目标名称</Label>
+              {isDetailEditing ? (
+                <Input value={detailName} onChange={e => setDetailName(e.target.value)} />
+              ) : (
+                <div className="px-3 py-2 rounded-md border bg-muted/50">{detailName}</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>需求数量</Label>
+              {isDetailEditing ? (
+                <Input type="number" min={1} value={detailQuantity} onChange={e => setDetailQuantity(Number(e.target.value))} />
+              ) : (
+                <div className="px-3 py-2 rounded-md border bg-muted/50">{detailQuantity}</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>优先级</Label>
+              {isDetailEditing ? (
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={detailPriority}
+                  onChange={e => setDetailPriority(Number(e.target.value))}
+                >
+                  <option value={1}>1 - 最高</option>
+                  <option value={2}>2 - 高</option>
+                  <option value={3}>3 - 中</option>
+                  <option value={4}>4 - 低</option>
+                  <option value={5}>5 - 最低</option>
+                </select>
+              ) : (
+                <div className="px-3 py-2 rounded-md border bg-muted/50">{detailPriority}</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>目标类型</Label>
+              {isDetailEditing ? (
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={detailGoalType}
+                  onChange={e => setDetailGoalType(e.target.value as 'equipment_craft' | 'resource_collection')}
+                >
+                  <option value="resource_collection">资源收集</option>
+                  <option value="equipment_craft">装备制作</option>
+                </select>
+              ) : (
+                <div className="px-3 py-2 rounded-md border bg-muted/50">{detailGoalType === 'resource_collection' ? '资源收集' : '装备制作'}</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            {isDetailEditing ? (
+              <>
+                <Button variant="outline" onClick={() => setIsDetailEditing(false)}>取消编辑</Button>
+                <Button onClick={handleSaveDetail}>保存</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowDetailDialog(false)}>关闭</Button>
+                <Button onClick={() => setIsDetailEditing(true)}>编辑</Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

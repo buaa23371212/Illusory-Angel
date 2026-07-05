@@ -134,6 +134,48 @@ export async function updateGoalAttributes(
 }
 
 /**
+ * 设置目标的父目标ID（通过更新goal_attributes约束）
+ * @param goalId 目标ID
+ * @param parentId 新的父目标ID
+ */
+export async function setGoalParentId(
+  goalId: number,
+  parentId: number
+): Promise<void> {
+  const response = await apiClient.client.post('/constraints', {
+    ownerType: BqtjOwnerType.GOAL,
+    ownerId: goalId,
+    constraintName: BqtjConstraintNames.GOAL_ATTRIBUTES,
+    params: { parentId },
+  });
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || '更新目标父级失败');
+  }
+}
+
+/**
+ * 更新单个目标的 goal_attributes（目标级约束）
+ * @param goalId 目标ID
+ * @param attributes 属性参数字段（部分更新）
+ */
+export async function updateSingleGoalAttributes(
+  goalId: number,
+  attributes: Partial<GoalAttributesParams>
+): Promise<void> {
+  const response = await apiClient.client.post('/constraints', {
+    ownerType: BqtjOwnerType.GOAL,
+    ownerId: goalId,
+    constraintName: BqtjConstraintNames.GOAL_ATTRIBUTES,
+    params: attributes,
+  });
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || '更新目标属性失败');
+  }
+}
+
+/**
  * 删除目标
  * @param goalId 目标ID
  */

@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '../../../../components/ui/dropdown-menu';
 import { Button } from '../../../../components/ui/button';
-import { MoreVertical, Plus, Trash2 } from 'lucide-react';
+import { MoreVertical, Plus, ArrowUp, Eye, Trash2 } from 'lucide-react';
 
 /**
  * 树形目标卡片组件属性接口
@@ -33,6 +33,10 @@ interface BqtjGoalCardProps {
   onDelete: (goalId: number) => void;
   /** 添加子目标回调 */
   onAddChild: (parentId: number) => void;
+  /** 添加父目标回调（在目标上方创建一个新目标作为其父级） */
+  onAddParent?: (goalId: number) => void;
+  /** 查看详情回调 */
+  onViewDetail?: (goalId: number) => void;
 }
 
 /**
@@ -59,6 +63,8 @@ export function BqtjGoalCard({
   priority,
   onDelete,
   onAddChild,
+  onAddParent,
+  onViewDetail,
 }: BqtjGoalCardProps): React.ReactElement {
   // 根据深度选择背景色，超过5层取最后一层
   const depthClass = depthColors[Math.min(depth, depthColors.length - 1)];
@@ -92,10 +98,22 @@ export function BqtjGoalCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onViewDetail && (
+              <DropdownMenuItem onClick={() => onViewDetail(goalId)}>
+                <Eye className="mr-2 h-4 w-4" />
+                查看详情
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => onAddChild(goalId)}>
               <Plus className="mr-2 h-4 w-4" />
               添加子目标
             </DropdownMenuItem>
+            {onAddParent && (
+              <DropdownMenuItem onClick={() => onAddParent(goalId)}>
+                <ArrowUp className="mr-2 h-4 w-4" />
+                添加父目标
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"

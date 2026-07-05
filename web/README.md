@@ -58,13 +58,19 @@ web/
 
 | 扩展点 | 说明 |
 |--------|------|
-| `navigationMenuItems` | 主导航栏菜单项 |
-| `contentPanelExtensions` | 内容区面板扩展 |
-| `goalCardRenderers` | 目标卡片渲染器（可替换默认设计） |
-| `GoalCardBadge` | 目标卡片标签接口 |
+| `featureSidebarItems` | 最左侧导航栏菜单项 |
+| `navigationMenuItems` | 中间对应功能导航栏 |
 | `projectActionMenuItems` | 项目操作菜单项 |
+| `projectFormFieldItems` | 项目级别的表单字段操作菜单项 |
+| `contentPanelExtensions` | 内容区面板扩展 |
+| `goalListFilters` | 目标列表筛选器扩展 |
+| `goalListSorters` | 目标列表排序方式扩展 |
+| `goalCardRenderers` | 目标卡片渲染器（可替换默认设计） |
+| `goalCardBadge` | 目标卡片标签接口（可用于约束的可视化展示） |
 | `goalActionMenuItems` | 目标操作菜单项 |
-| `formFieldExtensions` | 目标创建/更新表单字段扩展 |
+| `goalFormFieldExtensions` | 目标创建/更新表单字段扩展 |
+| `globalComponents` | 全局组件扩展（如闹钟轮循） |
+| `apiExtensions` | API扩展点（如自定义API调用） |
 
 注：
 表单字段扩展主要修改约束，前端显示不一定是描述约束，可以是目标本身
