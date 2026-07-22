@@ -58,8 +58,9 @@ web/
 
 | 扩展点 | 说明 |
 |--------|------|
-| `featureSidebarItems` | 最左侧导航栏菜单项 |
-| `navigationMenuItems` | 中间对应功能导航栏 |
+| `featureSidebarItems` | 最左侧功能导航栏菜单项 |
+| `navigationPanelExtensions` | 中间对应功能的导航栏面板拓展 |
+| `navigationMenuItems` | 中间对应功能的导航栏菜单项 |
 | `projectActionMenuItems` | 项目操作菜单项 |
 | `projectFormFieldItems` | 项目级别的表单字段操作菜单项 |
 | `contentPanelExtensions` | 内容区面板扩展 |

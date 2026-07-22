@@ -19,6 +19,7 @@ export * from './api';
  */
 import { getAlarmConfig, saveAlarmConfig, deleteAlarmConfig, getDueAlarms } from './api';
 import type { ApiExtension } from '../types';
+import { AlarmConfigDialog } from './components/AlarmConfigDialog';
 
 // 定义API扩展
 const apiExtensions: ApiExtension[] = [
@@ -42,12 +43,30 @@ export const alarmClockPlugin: Plugin = {
     });
 
     // 注册目标操作菜单项，提供闹钟设置入口
-    // 使用简单方式：label + icon + onClick，不需要自定义组件
+    // 使用对话框方式：提供 dialogComponent，由框架统一处理对话框状态
     registerGoalActionMenuItem({
       id: 'alarm-settings',
       label: '闹钟设置',
       icon: Settings,
       separator: true,
+      dialogComponent: ({ open, onOpenChange, goal }) => {
+        return (
+          <AlarmConfigDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            goalId={goal.goal_id}
+            goalName={goal.name}
+            onSaved={() => {
+              if (typeof window !== 'undefined' && (window as any).__alarmRefresh) {
+                const refreshFn = (window as any).__alarmRefresh[goal.goal_id];
+                if (typeof refreshFn === 'function') {
+                  refreshFn();
+                }
+              }
+            }}
+          />
+        );
+      },
     });
 
     // 注册全局组件用于轮询检查闹钟

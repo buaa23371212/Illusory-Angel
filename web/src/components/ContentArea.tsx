@@ -2,16 +2,8 @@ import React from "react";
 import { GoalList } from "./GoalList";
 import { PluginDetail } from "./PluginDetail";
 import { useAppState } from "../store/AppState";
+import { getContentPanelExtensions } from "../plugins/registry";
 import type { ContentPanelExtension } from "../plugins/types";
-
-/**
- * 内容区域组件属性接口
- * 只需要内容面板扩展，其他状态从AppState获取
- */
-interface ContentAreaProps {
-  /** 所有注册的内容区面板扩展 */
-  contentPanels: ContentPanelExtension[];
-}
 
 /**
  * 内容区域组件
@@ -19,11 +11,12 @@ interface ContentAreaProps {
  * 从AppState获取全局状态，不再通过props层层传递
  * 在projects功能下，可以显示插件注册的自定义内容面板
  */
-export const ContentArea: React.FC<ContentAreaProps> = ({
-  contentPanels,
-}) => {
+export const ContentArea: React.FC = () => {
   // 直接从AppState获取状态和回调
   const { state, loadProjectProgress } = useAppState();
+
+  // 直接从插件注册表获取扩展点数据
+  const contentPanels: ContentPanelExtension[] = getContentPanelExtensions();
 
   /**
    * 处理目标变化，刷新项目进度

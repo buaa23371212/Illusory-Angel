@@ -1,6 +1,6 @@
 /**
  * 导航栏菜单项接口
- * 插件可以注册自定义菜单项到顶部导航栏
+ * 插件可以注册自定义菜单项到中间功能导航栏的操作菜单
  */
 export interface NavigationMenuItem {
   /** 菜单项唯一标识 */
@@ -15,6 +15,33 @@ export interface NavigationMenuItem {
   href?: string;
   /** 排序权值，越小越靠前 */
   order?: number;
+  /** 是否分隔线 */
+  separator?: boolean;
+}
+
+/**
+ * 导航栏面板扩展接口
+ * 插件可以注册自定义面板替换中间功能导航栏的内容
+ * 类似于 contentPanelExtensions 替换内容区，此扩展点替换导航栏
+ */
+export interface NavigationPanelExtension {
+  /** 面板唯一标识 */
+  id: string;
+  /** 面板显示名称 */
+  label: string;
+  /** 面板图标组件（可选） */
+  icon?: React.ComponentType<{ className?: string }>;
+  /** 面板组件 */
+  component: React.ComponentType<{
+    /** 当前选中的项目 */
+    selectedProject: any;
+    /** 项目变化回调 */
+    onProjectChange: () => void;
+  }>;
+  /** 排序位置 */
+  order?: number;
+  /** 匹配的项目分类：选中该分类的项目时自动使用此导航栏面板 */
+  matchProjectCategory?: string;
 }
 
 /**
@@ -88,6 +115,7 @@ export interface ProjectActionMenuItem {
  * 支持两种方式：
  * 1. 简单方式：提供 label, icon, onClick
  * 2. 组件方式：提供自定义 component，完全控制渲染
+ * 3. 对话框方式：提供 dialogComponent，点击后打开对话框
  */
 export interface GoalActionMenuItem {
   /** 菜单项唯一标识 */
@@ -100,6 +128,17 @@ export interface GoalActionMenuItem {
   onClick?: (goal: any, projectId: number) => void;
   /** 自定义组件（组件方式必填） */
   component?: React.ComponentType<{
+    /** 目标数据 */
+    goal: any;
+    /** 项目ID */
+    projectId: number;
+  }>;
+  /** 对话框组件（对话框方式） */
+  dialogComponent?: React.ComponentType<{
+    /** 对话框是否打开 */
+    open: boolean;
+    /** 对话框打开状态变化回调 */
+    onOpenChange: (open: boolean) => void;
     /** 目标数据 */
     goal: any;
     /** 项目ID */
@@ -182,6 +221,8 @@ export interface ApiExtension {
 export interface PluginRegistry {
   /** 导航栏菜单项 */
   navigationMenuItems: NavigationMenuItem[];
+  /** 导航栏面板扩展 */
+  navigationPanelExtensions: NavigationPanelExtension[];
   /** 目标卡片渲染器 */
   goalCardRenderers: GoalCardRenderer[];
   /** 目标卡片标签 */
@@ -223,6 +264,7 @@ export interface Plugin {
  */
 export const defaultRegistry: PluginRegistry = {
   navigationMenuItems: [],
+  navigationPanelExtensions: [],
   goalCardRenderers: [],
   goalCardBadges: [],
   projectActionMenuItems: [],

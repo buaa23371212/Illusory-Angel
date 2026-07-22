@@ -2,7 +2,7 @@
  * 树形结构节点数据接口
  */
 
-import type { Goal } from '../../../../api/client';
+import type { Goal } from '../../../api/client';
 import type {
   GoalAttributesParams,
   DropLimitConfig,

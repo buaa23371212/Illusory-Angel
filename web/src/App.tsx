@@ -8,12 +8,11 @@ import {
   DialogFooter,
 } from "./components/ui/dialog";
 import type { Project } from "./api/client";
-import type { ContentPanelExtension, ProjectActionMenuItem } from "./plugins/types";
 import { Toaster } from "./components/ui/sonner";
 import { Target } from "lucide-react";
 import { toast } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PluginProvider, usePlugins } from "./plugins";
+import { PluginProvider } from "./plugins";
 import { AppStateProvider, useAppState } from "./store/AppState";
 import { FeatureSidebar } from "./components/FeatureSidebar";
 import { ProjectsNavigation } from "./components/ProjectsNavigation";
@@ -23,17 +22,12 @@ import "./App.css";
 
 /**
  * 主应用内容组件
- * 使用usePlugins钩子获取插件扩展点数据
  * 使用独立的AppState管理全局状态
+ * 组件直接从插件注册表获取扩展点数据，不再通过props传递
  */
 function AppContent() {
   // 从独立状态管理获取状态和操作方法
   const { state, dispatch, confirmDeleteProject } = useAppState();
-
-  // 获取插件扩展点数据
-  const { getContentPanelExtensions, getProjectActionMenuItems } = usePlugins();
-  const contentPanels: ContentPanelExtension[] = getContentPanelExtensions();
-  const projectActionMenuItems: ProjectActionMenuItem[] = getProjectActionMenuItems();
 
   /**
    * 处理项目创建成功
@@ -59,13 +53,11 @@ function AppContent() {
       {/* 主体内容：三栏布局 */}
       <div className="flex flex-1 overflow-hidden">
         {/* 最左侧：功能导航 */}
-      <FeatureSidebar />
+        <FeatureSidebar />
 
         {/* 中间：功能导航栏 - 根据选中的功能显示不同内容 */}
         {state.selectedFeature === "projects" && (
-          <ProjectsNavigation
-            projectActionMenuItems={projectActionMenuItems}
-          />
+          <ProjectsNavigation />
         )}
 
         {state.selectedFeature === "plugins" && (
@@ -73,9 +65,7 @@ function AppContent() {
         )}
 
         {/* 最右侧：主体内容区 - 根据选中的功能显示不同内容 */}
-        <ContentArea
-          contentPanels={contentPanels}
-        />
+        <ContentArea />
       </div>
 
       {/* 创建项目对话框 */}

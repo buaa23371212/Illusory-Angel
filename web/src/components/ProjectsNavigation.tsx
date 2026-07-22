@@ -1,39 +1,37 @@
 import React from "react";
 import type { Project } from "../api/client";
-import type { ProjectActionMenuItem } from "../plugins/types";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Plus, MoreVertical } from "lucide-react";
 import { useAppState } from "../store/AppState";
 import ProjectCard from "./ProjectCard";
 import type { ProjectProgress } from "./ProjectCard";
-
-/**
- * 项目导航组件属性接口
- * 只需要插件菜单项，其他状态从AppState获取
- */
-interface ProjectsNavigationProps {
-  /** 插件注册的项目操作菜单项 */
-  projectActionMenuItems: ProjectActionMenuItem[];
-}
+import { getProjectActionMenuItems, getNavigationMenuItems, getNavigationPanelExtensions } from "../plugins/registry";
+import type { ProjectActionMenuItem, NavigationMenuItem, NavigationPanelExtension } from "../plugins/types";
 
 /**
  * 项目导航组件
  * 左侧区域的项目列表导航栏，显示所有项目卡片
  * 从AppState获取全局状态，不再通过props层层传递
  * 点击项目卡片后可切换内容区面板显示详情
+ * 支持插件通过 navigationPanelExtensions 替换导航栏内容
+ * 支持插件通过 navigationMenuItems 添加操作菜单项
  */
-export const ProjectsNavigation: React.FC<ProjectsNavigationProps> = ({
-  projectActionMenuItems,
-}) => {
+export const ProjectsNavigation: React.FC = () => {
   // 直接从AppState获取状态和dispatch
-  const { state, dispatch } = useAppState();
+  const { state, dispatch, loadProjectProgress } = useAppState();
+
+  // 直接从插件注册表获取扩展点数据
+  const projectActionMenuItems: ProjectActionMenuItem[] = getProjectActionMenuItems();
+  const navigationMenuItems: NavigationMenuItem[] = getNavigationMenuItems();
+  const navigationPanelExtensions: NavigationPanelExtension[] = getNavigationPanelExtensions();
 
   /**
    * 处理创建新项目点击
@@ -67,6 +65,32 @@ export const ProjectsNavigation: React.FC<ProjectsNavigationProps> = ({
     dispatch({ type: "SET_ACTIVE_CONTENT_PANEL", payload: null });
   };
 
+  /**
+   * 处理项目变化回调
+   */
+  const handleProjectChange = () => {
+    if (state.selectedProject) {
+      loadProjectProgress(state.selectedProject.project_id);
+    }
+  };
+
+  // 检查是否有插件面板声明匹配当前项目的分类
+  const matchingPanel = state.selectedProject
+    ? navigationPanelExtensions.find(p => p.matchProjectCategory && p.matchProjectCategory === state.selectedProject?.category)
+    : null;
+
+  // 如果有匹配的插件导航栏面板，渲染插件面板
+  if (matchingPanel) {
+    return (
+      <aside className="w-80 border-r bg-muted/30 flex flex-col overflow-hidden">
+        <matchingPanel.component
+          selectedProject={state.selectedProject}
+          onProjectChange={handleProjectChange}
+        />
+      </aside>
+    );
+  }
+
   const totalProjects = state.projects.length;
 
   return (
@@ -89,6 +113,23 @@ export const ProjectsNavigation: React.FC<ProjectsNavigationProps> = ({
                   <Plus className="mr-2 h-4 w-4" />
                   新建项目
                 </DropdownMenuItem>
+                {/* 渲染插件注册的导航栏菜单项 */}
+                {navigationMenuItems.length > 0 && <DropdownMenuSeparator />}
+                {navigationMenuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <React.Fragment key={item.id}>
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        item.onClick?.();
+                      }}>
+                        {Icon && <Icon className="mr-2 h-4 w-4" />}
+                        {item.label}
+                      </DropdownMenuItem>
+                      {item.separator && <DropdownMenuSeparator />}
+                    </React.Fragment>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

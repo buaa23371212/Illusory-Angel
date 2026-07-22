@@ -1,6 +1,7 @@
 import type {
   PluginRegistry,
   NavigationMenuItem,
+  NavigationPanelExtension,
   GoalCardRenderer,
   GoalCardBadge,
   ProjectActionMenuItem,
@@ -114,6 +115,30 @@ class PluginRegistrySingleton {
    */
   getGoalCardBadges(): GoalCardBadge[] {
     return [...this.registry.goalCardBadges];
+  }
+
+  /**
+   * 注册导航栏面板扩展
+   */
+  registerNavigationPanelExtension(extension: NavigationPanelExtension): void {
+    this.registry.navigationPanelExtensions = this.registry.navigationPanelExtensions
+      .filter(existing => existing.id !== extension.id)
+      .concat([extension]);
+    this.sortByOrder(this.registry.navigationPanelExtensions);
+  }
+
+  /**
+   * 获取所有导航栏面板扩展（已排序）
+   */
+  getNavigationPanelExtensions(): NavigationPanelExtension[] {
+    return [...this.registry.navigationPanelExtensions];
+  }
+
+  /**
+   * 获取指定ID的导航栏面板扩展
+   */
+  getNavigationPanelExtension(id: string): NavigationPanelExtension | undefined {
+    return this.registry.navigationPanelExtensions.find(e => e.id === id);
   }
 
   /**
@@ -241,6 +266,7 @@ export const pluginRegistry = new PluginRegistrySingleton();
  */
 export const registerPlugin = (plugin: Plugin) => pluginRegistry.registerPlugin(plugin);
 export const registerNavigationMenuItem = (item: NavigationMenuItem) => pluginRegistry.registerNavigationMenuItem(item);
+export const registerNavigationPanelExtension = (extension: NavigationPanelExtension) => pluginRegistry.registerNavigationPanelExtension(extension);
 export const registerProjectActionMenuItem = (item: ProjectActionMenuItem) => pluginRegistry.registerProjectActionMenuItem(item);
 export const registerGoalActionMenuItem = (item: GoalActionMenuItem) => pluginRegistry.registerGoalActionMenuItem(item);
 export const registerGoalCardRenderer = (renderer: GoalCardRenderer) => pluginRegistry.registerGoalCardRenderer(renderer);
@@ -252,6 +278,8 @@ export const registerApiExtension = (extension: ApiExtension) => pluginRegistry.
 
 // 获取方法导出
 export function getNavigationMenuItems() { return pluginRegistry.getNavigationMenuItems(); }
+export function getNavigationPanelExtensions() { return pluginRegistry.getNavigationPanelExtensions(); }
+export function getNavigationPanelExtension(id: string) { return pluginRegistry.getNavigationPanelExtension(id); }
 export function getProjectActionMenuItems() { return pluginRegistry.getProjectActionMenuItems(); }
 export function getGoalActionMenuItems() { return pluginRegistry.getGoalActionMenuItems(); }
 export function getGoalCardRenderers() { return pluginRegistry.getGoalCardRenderers(); }

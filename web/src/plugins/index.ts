@@ -27,4 +27,4 @@ import { loadPluginApiExtensions } from '@/api/pluginApiLoader';
 loadPluginApiExtensions();
 
 // 导出插件供参考
-export { statisticsPlugin, alarmClockPlugin };
+export { statisticsPlugin, alarmClockPlugin, bqtjPlugin };

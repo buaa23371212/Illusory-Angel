@@ -14,8 +14,6 @@ import { MoreVertical, Eye, Trash2 } from 'lucide-react';
 import type { Goal } from '../api/client';
 import { getGoalActionMenuItems, getGoalCardBadges } from '../plugins/registry';
 import type { GoalActionMenuItem, GoalCardBadge } from '../plugins/types';
-// TODO: 需要移除闹钟配置对话框
-import { AlarmConfigDialog } from '../plugins/alarm-clock/components/AlarmConfigDialog';
 
 /**
  * 默认目标卡片组件属性接口
@@ -49,15 +47,17 @@ export function GoalCard({
   // 获取所有注册的目标卡片标签
   const goalCardBadges: GoalCardBadge[] = getGoalCardBadges();
 
-  // 闹钟对话框状态
-  const [alarmDialogOpen, setAlarmDialogOpen] = useState(false);
+  // 存储所有对话框的打开状态，key为菜单项id
+  const [dialogOpenStates, setDialogOpenStates] = useState<Record<string, boolean>>({});
 
   /**
-   * 处理闹钟设置菜单项点击
-   * 打开闹钟配置对话框
+   * 切换指定对话框的打开状态
    */
-  const handleAlarmSettingsClick = () => {
-    setAlarmDialogOpen(true);
+  const toggleDialog = (itemId: string) => {
+    setDialogOpenStates(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
   };
 
   return (
@@ -122,15 +122,15 @@ export function GoalCard({
                 {goalActionMenuItems.length > 0 && <DropdownMenuSeparator />}
                 {/* 渲染插件注册的自定义目标操作菜单项 */}
                 {goalActionMenuItems.map((item) => {
-                  // 如果是闹钟设置，使用自定义点击处理器
-                  if (item.id === 'alarm-settings') {
+                  // 如果提供了dialogComponent，使用对话框方式渲染
+                  if (item.dialogComponent) {
                     const Icon = item.icon;
                     return (
                       <React.Fragment key={item.id}>
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleAlarmSettingsClick();
+                            toggleDialog(item.id);
                           }}
                         >
                           {Icon && <Icon className="mr-2 h-4 w-4" />}
@@ -187,22 +187,21 @@ export function GoalCard({
         </CardContent>
       </Card>
 
-      {/* 闹钟配置对话框 - 在DropdownMenu外部渲染 */}
-      <AlarmConfigDialog
-        open={alarmDialogOpen}
-        onOpenChange={setAlarmDialogOpen}
-        goalId={goal.goal_id}
-        goalName={goal.name}
-        onSaved={() => {
-          // 配置保存后触发闹钟标签刷新
-          if (typeof window !== 'undefined' && (window as any).__alarmRefresh) {
-            const refreshFn = (window as any).__alarmRefresh[goal.goal_id];
-            if (typeof refreshFn === 'function') {
-              refreshFn();
-            }
-          }
-        }}
-      />
+      {/* 渲染所有注册的对话框组件 */}
+      {goalActionMenuItems.map((item) => {
+        if (!item.dialogComponent) return null;
+        const DialogComponent = item.dialogComponent;
+        const isOpen = dialogOpenStates[item.id] || false;
+        return (
+          <DialogComponent
+            key={item.id}
+            open={isOpen}
+            onOpenChange={(open) => setDialogOpenStates(prev => ({ ...prev, [item.id]: open }))}
+            goal={goal}
+            projectId={projectId}
+          />
+        );
+      })}
     </>
   );
 }

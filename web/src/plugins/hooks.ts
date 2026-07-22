@@ -1,5 +1,5 @@
 import { usePluginContext } from './PluginContext';
-import type { NavigationMenuItem } from './types';
+import type { NavigationMenuItem, NavigationPanelExtension } from './types';
 import { pluginRegistry } from './registry';
 
 /**
@@ -8,6 +8,14 @@ import { pluginRegistry } from './registry';
 export function useNavigationMenuItems(): NavigationMenuItem[] {
   const { registry } = usePluginContext();
   return registry.navigationMenuItems;
+}
+
+/**
+ * 获取所有注册的导航栏面板扩展
+ */
+export function useNavigationPanelExtensions(): NavigationPanelExtension[] {
+  const { registry } = usePluginContext();
+  return registry.navigationPanelExtensions;
 }
 
 /**
@@ -25,6 +33,7 @@ export function usePlugins() {
   const { registry } = usePluginContext();
   return {
     getNavigationMenuItems: () => registry.navigationMenuItems,
+    getNavigationPanelExtensions: () => registry.navigationPanelExtensions,
     getContentPanelExtensions: () => pluginRegistry.getContentPanelExtensions(),
     getProjectActionMenuItems: () => registry.projectActionMenuItems,
   };
