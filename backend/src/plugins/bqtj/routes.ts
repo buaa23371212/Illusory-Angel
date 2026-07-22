@@ -14,6 +14,9 @@ bqtjRouter.get('/projects/:projectId/plugins/bqtj', controller.getAllData);
 // POST /api/v1/projects/:projectId/plugins/bqtj/constraint/:constraintName - 更新指定约束的 params 数据
 bqtjRouter.post('/projects/:projectId/plugins/bqtj/constraint/:constraintName', controller.updateConstraint);
 
+// POST /api/v1/projects/:projectId/plugins/bqtj/parse-archive - 解析游戏存档并保存到背包资源约束
+bqtjRouter.post('/projects/:projectId/plugins/bqtj/parse-archive', controller.parseArchive);
+
 // 自注册：注册插件信息和路由
 registerPlugin({
   id: 'bqtj',

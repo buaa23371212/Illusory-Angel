@@ -300,6 +300,50 @@ export class TreeManager<T> {
   }
 
   /**
+   * 获取节点的所有后代节点ID（深度优先）
+   * @param id 节点ID
+   */
+  public getDescendants(id: number): number[] {
+    const descendants: number[] = [];
+    const node = this.treeData.nodes.get(id);
+    if (!node) return descendants;
+
+    const traverse = (nodeId: number) => {
+      const currentNode = this.treeData.nodes.get(nodeId);
+      if (!currentNode) return;
+      currentNode.children.forEach(childId => {
+        descendants.push(childId);
+        traverse(childId);
+      });
+    };
+
+    traverse(id);
+    return descendants;
+  }
+
+  /**
+   * 获取节点的所有祖先节点ID
+   * @param id 节点ID
+   */
+  public getAncestors(id: number): number[] {
+    const ancestors: number[] = [];
+    let currentId: number | null = id;
+
+    while (currentId !== null) {
+      const node = this.treeData.nodes.get(currentId);
+      if (!node) break;
+      if (node.parentId !== null) {
+        ancestors.push(node.parentId);
+        currentId = node.parentId;
+      } else {
+        break;
+      }
+    }
+
+    return ancestors;
+  }
+
+  /**
    * 构建从后端目标列表和goal_attributes约束生成树形数据
    * @param goals 目标列表
    * @param goalAttributes goal_attributes约束映射表

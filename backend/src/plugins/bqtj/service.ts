@@ -7,6 +7,7 @@ import { getRepository } from '../../repositories';
 import type { Constraint } from '@prisma/client';
 import {
   CONSTRAINT_NAMES,
+  GoalAttributes,
   isValidDailyDropLimit,
   isValidWeeklyDropLimit,
   isValidInventoryResource,
@@ -20,6 +21,7 @@ import type {
   InventoryResource,
   MaterialDefinition,
 } from './types';
+import { createArchiveParser } from './parser';
 
 /**
  * 获取项目下所有养成约束数据
@@ -151,15 +153,17 @@ function validateParamsByConstraintName(
 
 /**
  * 更新指定约束的 params 数据
- * @param projectId 项目ID
+ * @param ownerId 所有者ID（项目ID或目标ID）
  * @param constraintName 约束名称
  * @param params 新的 params JSON 对象
+ * @param ownerType 所有者类型（默认 PROJECT，用于区分项目级和目标级约束）
  * @returns 更新是否成功
  */
 export async function updateConstraintParams(
-  projectId: number,
+  ownerId: number,
   constraintName: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  ownerType: 'PROJECT' | 'GOAL' = 'PROJECT'
 ): Promise<boolean> {
   const repo = await getRepository();
 
@@ -175,18 +179,18 @@ export async function updateConstraintParams(
   }
 
   // 查找已存在的约束
-  const existing = await findConstraintByName(projectId, constraintName);
+  const existing = await findConstraintByName(ownerId, constraintName, ownerType);
 
   if (existing) {
     // 更新现有约束
-    await repo.constraint.update(existing.constraintId, { params });
+    await repo.constraint.update(existing.constraintId, { params: params as unknown as any });
   } else {
     // 创建新约束
     await repo.constraint.create({
-      ownerType: 'PROJECT',
-      ownerId: projectId,
+      ownerType,
+      ownerId,
       constraintName,
-      params,
+      params: params as unknown as any,
     });
   }
 
@@ -194,14 +198,18 @@ export async function updateConstraintParams(
 }
 
 /**
- * 根据项目ID和约束名称查找约束
+ * 根据所有者ID和约束名称查找约束
+ * @param ownerId 所有者ID
+ * @param constraintName 约束名称
+ * @param ownerType 所有者类型（默认 PROJECT）
  */
 async function findConstraintByName(
   ownerId: number,
-  constraintName: string
+  constraintName: string,
+  ownerType: 'PROJECT' | 'GOAL' = 'PROJECT'
 ): Promise<Constraint | null> {
   const repo = await getRepository();
-  const constraints = await repo.constraint.findByOwner('PROJECT', ownerId);
+  const constraints = await repo.constraint.findByOwner(ownerType, ownerId);
   return constraints.find(c => c.constraintName === constraintName) || null;
 }
 
@@ -210,7 +218,7 @@ async function findConstraintByName(
  */
 function parseDailyDropLimit(constraint: Constraint | null): DailyDropLimit[] {
   if (!constraint || !constraint.params) return [];
-  const params = constraint.params as Record<string, DailyDropLimit>;
+  const params = constraint.params as unknown as Record<string, DailyDropLimit>;
   return Object.values(params);
 }
 
@@ -219,7 +227,7 @@ function parseDailyDropLimit(constraint: Constraint | null): DailyDropLimit[] {
  */
 function parseWeeklyDropLimit(constraint: Constraint | null): WeeklyDropLimit[] {
   if (!constraint || !constraint.params) return [];
-  const params = constraint.params as Record<string, WeeklyDropLimit>;
+  const params = constraint.params as unknown as Record<string, WeeklyDropLimit>;
   return Object.values(params);
 }
 
@@ -228,7 +236,7 @@ function parseWeeklyDropLimit(constraint: Constraint | null): WeeklyDropLimit[] 
  */
 function parseInventoryResources(constraint: Constraint | null): InventoryResource[] {
   if (!constraint || !constraint.params) return [];
-  const params = constraint.params as Record<string, InventoryResource>;
+  const params = constraint.params as unknown as Record<string, InventoryResource>;
   return Object.values(params);
 }
 
@@ -237,7 +245,7 @@ function parseInventoryResources(constraint: Constraint | null): InventoryResour
  */
 function parseMaterialDefinitions(constraint: Constraint | null): Record<string, MaterialDefinition> {
   if (!constraint || !constraint.params) return {};
-  return constraint.params as Record<string, MaterialDefinition>;
+  return constraint.params as unknown as Record<string, MaterialDefinition>;
 }
 
 /**
@@ -258,8 +266,75 @@ async function findAllGoalAttributes(goalIds: number[]): Promise<Record<string, 
 
   const result: Record<string, GoalAttributes> = {};
   for (const constraint of goalAttrConstraints) {
-    result[String(constraint.ownerId)] = constraint.params as GoalAttributes;
+    result[String(constraint.ownerId)] = constraint.params as unknown as GoalAttributes;
   }
 
   return result;
+}
+
+/**
+ * 解析游戏存档并将结果保存为背包资源约束
+ * @param projectId 项目ID
+ * @param archiveContent 存档文件内容（Base64编码或原始字符串）
+ * @param saveToInventory 是否将解析结果保存为 inventory_resources 约束
+ * @returns 解析结果
+ */
+export async function parseArchiveAndSave(
+  projectId: number,
+  archiveContent: string,
+  saveToInventory: boolean = true
+): Promise<{
+  success: boolean;
+  error?: string;
+  parsedResources?: InventoryResource[];
+}> {
+  try {
+    const parser = createArchiveParser();
+
+    // 尝试解码 Base64 内容
+    let content: string | Buffer = archiveContent;
+    try {
+      content = Buffer.from(archiveContent, 'base64');
+    } catch {
+      // 如果不是 Base64，保持原样作为字符串处理
+      content = archiveContent;
+    }
+
+    // 调用解析器
+    const result = await parser.parse(content);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    // 如果解析成功且需要保存，将结果存储为背包资源约束
+    if (saveToInventory && result.inventoryResources && result.inventoryResources.length > 0) {
+      // 转换为约束所需的格式（以 resourceId 为键）
+      const inventoryParams: Record<string, InventoryResource> = {};
+      for (const resource of result.inventoryResources) {
+        inventoryParams[resource.resourceId] = resource;
+      }
+
+      // 更新或创建 inventory_resources 约束
+      await updateConstraintParams(
+        projectId,
+        CONSTRAINT_NAMES.INVENTORY_RESOURCES,
+        inventoryParams,
+        'PROJECT'
+      );
+    }
+
+    return {
+      success: true,
+      parsedResources: result.inventoryResources,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: `解析存档时发生错误: ${String(err)}`,
+    };
+  }
 }

@@ -101,7 +101,7 @@ export async function createGoalWithAttributes(
 
   const goalId = createResponse.data.data.goal_id || createResponse.data.data.goalId;
 
-  // 2. 创建goal_attributes约束
+  // 2. 创建goal_attributes约束（通过核心端点）
   const attributesParams: GoalAttributesParams = {
     priority,
     parentId,
@@ -120,7 +120,7 @@ export async function createGoalWithAttributes(
 }
 
 /**
- * 更新目标goal_attributes属性
+ * 更新目标goal_attributes属性（项目级约束，通过插件端点）
  * @param projectId 项目ID
  * @param _goalId 目标ID（保留参数位置，未来可能使用）
  * @param attributes 属性参数
@@ -134,7 +134,7 @@ export async function updateGoalAttributes(
 }
 
 /**
- * 设置目标的父目标ID（通过更新goal_attributes约束）
+ * 设置目标的父目标ID（通过核心端点更新目标级约束）
  * @param goalId 目标ID
  * @param parentId 新的父目标ID
  */
@@ -155,7 +155,7 @@ export async function setGoalParentId(
 }
 
 /**
- * 更新单个目标的 goal_attributes（目标级约束）
+ * 更新单个目标的 goal_attributes（目标级约束，通过核心端点）
  * @param goalId 目标ID
  * @param attributes 属性参数字段（部分更新）
  */

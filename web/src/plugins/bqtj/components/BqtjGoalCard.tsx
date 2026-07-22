@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '../../../components/ui/card';
+import { Checkbox } from '../../../components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,8 @@ interface BqtjGoalCardProps {
   name: string;
   /** 在树中的层级深度（0=根节点） */
   depth: number;
+  /** 是否已完成 */
+  isCompleted?: boolean;
   /** 需求数量 */
   requiredQuantity?: number;
   /** 优先级（1-5） */
@@ -37,6 +40,8 @@ interface BqtjGoalCardProps {
   onAddParent?: (goalId: number) => void;
   /** 查看详情回调 */
   onViewDetail?: (goalId: number) => void;
+  /** 切换完成状态回调 */
+  onToggleComplete: (goalId: number) => void;
 }
 
 /**
@@ -59,12 +64,14 @@ export function BqtjGoalCard({
   goalId,
   name,
   depth,
+  isCompleted,
   requiredQuantity,
   priority,
   onDelete,
   onAddChild,
   onAddParent,
   onViewDetail,
+  onToggleComplete,
 }: BqtjGoalCardProps): React.ReactElement {
   // 根据深度选择背景色，超过5层取最后一层
   const depthClass = depthColors[Math.min(depth, depthColors.length - 1)];
@@ -72,19 +79,28 @@ export function BqtjGoalCard({
     <Card size="sm" className={`w-full ${depthClass}`}>
       <CardContent className="flex items-center justify-between gap-2 py-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-            {name}
-          </span>
-          {requiredQuantity !== undefined && (
-            <span className="text-xs text-[var(--color-muted-foreground)] whitespace-nowrap">
-              需要: {requiredQuantity}
+          <Checkbox
+            checked={isCompleted}
+            onCheckedChange={() => onToggleComplete(goalId)}
+            className="mt-0"
+          />
+          <div className="flex flex-col min-w-0">
+            <span className={`text-sm font-medium ${isCompleted ? 'line-through text-muted-foreground' : 'text-[var(--color-text-primary)]'} truncate`}>
+              {name}
             </span>
-          )}
-          {priority !== undefined && (
-            <span className="text-xs text-[var(--color-muted-foreground)] whitespace-nowrap">
-              优先级: {priority}
-            </span>
-          )}
+            <div className="flex items-center gap-2 mt-0.5">
+              {requiredQuantity !== undefined && (
+                <span className="text-xs text-[var(--color-muted-foreground)] whitespace-nowrap">
+                  需要: {requiredQuantity}
+                </span>
+              )}
+              {priority !== undefined && (
+                <span className="text-xs text-[var(--color-muted-foreground)] whitespace-nowrap">
+                  优先级: {priority}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

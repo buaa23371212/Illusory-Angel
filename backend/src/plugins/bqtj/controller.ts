@@ -9,6 +9,53 @@ import { success, error, serverError } from '../../utils/response';
 import type { UpdateConstraintRequest } from './types';
 
 /**
+ * 解析游戏存档并保存到背包资源约束
+ * @param req Express请求对象，params.projectId为项目ID，body包含存档内容
+ * @param res Express响应对象
+ * 返回: {success: true, data: {parsedResources: InventoryResource[]}}
+ */
+export async function parseArchive(req: Request, res: Response) {
+  try {
+    const { projectId } = req.params;
+    const projectIdNumber = parseInt(projectId as string);
+
+    if (isNaN(projectIdNumber)) {
+      error(res, 'Invalid projectId', 400);
+      return;
+    }
+
+    const { content, saveToInventory } = req.body as {
+      content: string;
+      saveToInventory?: boolean;
+    };
+
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      error(res, '存档内容不能为空', 400);
+      return;
+    }
+
+    const result = await bqtjService.parseArchiveAndSave(
+      projectIdNumber,
+      content,
+      saveToInventory !== false
+    );
+
+    if (!result.success) {
+      error(res, result.error || '解析存档失败', 400);
+      return;
+    }
+
+    success(res, {
+      success: true,
+      parsedResources: result.parsedResources,
+      message: '存档解析完成（当前为占位实现，待研究完解析方式后完成）',
+    });
+  } catch (err: unknown) {
+    serverError(res, String(err));
+  }
+}
+
+/**
  * 获取项目下所有养成约束数据
  * @param req Express请求对象，params.projectId为项目ID
  * @param res Express响应对象
