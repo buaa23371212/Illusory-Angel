@@ -2,8 +2,8 @@
  * 爆枪英雄养成插件入口
  */
 
-import type { Plugin, ApiExtension } from '../../types';
-import { registerContentPanelExtension, registerPlugin } from '../../';
+import type { Plugin, ApiExtension } from '../types';
+import { registerContentPanelExtension, registerPlugin } from '../';
 import { Target } from 'lucide-react';
 import BqtjProjectContent from './components/BqtjProjectContent';
 import { BQTJ_PROJECT_CATEGORY } from './types';

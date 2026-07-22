@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { InventoryResource } from '../types';
 import { updateInventoryResources } from '../api';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '../../../components/ui/button';
 import styles from './InventoryPanel.module.css';
 
 interface InventoryPanelProps {

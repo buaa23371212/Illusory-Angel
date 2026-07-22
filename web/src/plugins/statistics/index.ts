@@ -2,12 +2,12 @@
  * 统计概览插件
  * 在项目操作菜单添加统计选项，点击后在内容区显示项目统计信息
  */
-import type { Plugin } from '../../';
+import type { Plugin } from '../';
 import {
   registerPlugin,
   registerContentPanelExtension,
   registerProjectActionMenuItem,
-} from '../../';
+} from '../';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { BarChart3 } from 'lucide-react';
 

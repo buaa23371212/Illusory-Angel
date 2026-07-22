@@ -18,9 +18,9 @@ export * from './hooks';
 
 // --- 已注册插件 ---
 // 导入即自动注册并初始化所有启用的插件
-import { statisticsPlugin } from './registered/statistics';
-import { alarmClockPlugin } from './registered/alarm-clock';
-import { bqtjPlugin } from './registered/bqtj';
+import { statisticsPlugin } from './statistics';
+import { alarmClockPlugin } from './alarm-clock';
+import { bqtjPlugin } from './bqtj';
 import { loadPluginApiExtensions } from '@/api/pluginApiLoader';
 
 // 加载所有插件注册的API扩展到apiClient

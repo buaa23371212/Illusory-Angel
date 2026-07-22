@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DropLimitConfig } from '../types';
 import { updateDailyDropLimit, updateWeeklyDropLimit } from '../api';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '../../../components/ui/button';
 import styles from './DropLimitPanel.module.css';
 
 interface DropLimitPanelProps {

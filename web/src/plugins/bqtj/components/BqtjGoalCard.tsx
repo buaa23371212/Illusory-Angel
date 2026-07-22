@@ -4,15 +4,15 @@
  */
 
 import React from 'react';
-import { Card, CardContent } from '../../../../components/ui/card';
+import { Card, CardContent } from '../../../components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../../components/ui/dropdown-menu';
-import { Button } from '../../../../components/ui/button';
+} from '../../../components/ui/dropdown-menu';
+import { Button } from '../../../components/ui/button';
 import { MoreVertical, Plus, ArrowUp, Eye, Trash2 } from 'lucide-react';
 
 /**

@@ -14,7 +14,8 @@ import { MoreVertical, Eye, Trash2 } from 'lucide-react';
 import type { Goal } from '../api/client';
 import { getGoalActionMenuItems, getGoalCardBadges } from '../plugins/registry';
 import type { GoalActionMenuItem, GoalCardBadge } from '../plugins/types';
-import { AlarmConfigDialog } from '../plugins/registered/alarm-clock/components/AlarmConfigDialog';
+// TODO: 需要移除闹钟配置对话框
+import { AlarmConfigDialog } from '../plugins/alarm-clock/components/AlarmConfigDialog';
 
 /**
  * 默认目标卡片组件属性接口

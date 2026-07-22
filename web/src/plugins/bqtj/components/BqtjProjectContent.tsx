@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Goal } from '../../../../api/client';
-import { apiClient } from '../../../../api/client';
+import type { Goal } from '../../../api/client';
+import { apiClient } from '../../../api/client';
 import { DropLimitPanel } from './DropLimitPanel';
 import { InventoryPanel } from './InventoryPanel';
-import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../../components/ui/dialog';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import styles from './BqtjProjectContent.module.css';
 import { createGoalWithAttributes, deleteGoal, getAllBqtjData, setGoalParentId, updateSingleGoalAttributes } from '../api';
 import { BqtjDataManager } from '../utils';

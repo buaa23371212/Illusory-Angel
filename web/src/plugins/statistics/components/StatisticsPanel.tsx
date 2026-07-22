@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '../../../../components/ui/card';
-import { apiClient } from '../../../../api/client';
-import type { Project } from '../../../../api/client';
+import { Card, CardContent } from '../../../components/ui/card';
+import { apiClient } from '../../../api/client';
+import type { Project } from '../../../api/client';
 import { CheckCircle2, Target, TrendingUp, Clock } from 'lucide-react';
 
 /**

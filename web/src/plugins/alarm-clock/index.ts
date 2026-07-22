@@ -2,11 +2,11 @@
  * 闹钟提醒插件
  * 为目标设置闹钟提醒，定时通知用户
  */
-import type { Plugin } from '../../';
-import { pluginRegistry } from '../../';
+import type { Plugin } from '../';
+import { pluginRegistry } from '../';
 import { AlarmGoalBadge } from './components/AlarmGoalBadge';
 import GlobalAlarmPolling from './components/GlobalAlarmPolling';
-import { registerGoalActionMenuItem } from '../../registry';
+import { registerGoalActionMenuItem } from '../registry';
 import { Settings } from 'lucide-react';
 
 // 导出类型和API
@@ -18,7 +18,7 @@ export * from './api';
  * 为目标设置闹钟提醒，到点自动弹出通知，不错过重要事项
  */
 import { getAlarmConfig, saveAlarmConfig, deleteAlarmConfig, getDueAlarms } from './api';
-import type { ApiExtension } from '../../types';
+import type { ApiExtension } from '../types';
 
 // 定义API扩展
 const apiExtensions: ApiExtension[] = [
